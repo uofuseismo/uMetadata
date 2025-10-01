@@ -46,7 +46,7 @@ set_target_properties(uMetadata PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
 target_link_libraries(uMetadata PUBLIC gRPC::grpc gRPC::grpc++
-                      PRIVATE protobuf::libprotobuf SQLite::SQLite3 spdlog::spdlog_header_only)
+                      PRIVATE protobuf::libprotobuf spdlog::spdlog_header_only)
 target_include_directories(uMetadata
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
@@ -68,7 +68,7 @@ target_include_directories(uMetadataServer
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 target_link_libraries(uMetadataServer
-                      PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3 Boost::boost Threads::Threads)
+                      PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3 Boost::boost Threads::Threads m)
 
 ##########################################################################################
 #                                      Installation                                      #
