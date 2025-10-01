@@ -1,7 +1,6 @@
 # Purpose: Builds the uMetadata software.
-# Usage: podman build -t us8base:latest -f Dockerfile.u24
-#   or   buildah bud -t us8base:latest -f Dockerfile.base.u24
-#        buildah push us8base quay.io/uuss/us8base
+# Usage: podman build -t umdbuilder:latest -f Dockerfile.u24
+#   or   buildah bud -t umdbuilder:latest -f Dockerfile.u24
 # 
 FROM quay.io/uuss/us8base:latest as umdbuilder
 
@@ -9,10 +8,11 @@ RUN cd /home/ubuntu &&\
     if [ -d uMetadata ]; then rm -rf uMetadata; fi &&\
     git clone https://github.com/uofuseismo/uMetadata.git &&\
     cd uMetadata &&\
-    git pull &&\
     mkdir build &&\
     cd build &&\
-    cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/usr/local/ &&\
+    export CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/usr/local/grpc/lib/cmake/absl:/usr/local/grpc/lib/cmake/protobuf:/usr/local/grpc/lib/cmake/utf8_range 
+    cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_FOR_DEBIAN=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ &&\
     make &&\
-    make install
+    make install &&\
+
 

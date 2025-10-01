@@ -1,0 +1,34 @@
+# Time cmake module
+#
+# The following import targets are created
+#
+# ::
+#
+#   libuMetadata-static
+#   libuMetadata
+#
+# This module sets the following variables in your project::
+#
+#   uMetadata_FOUND - true if the uMetadata library was found on the system
+#   uMetadata_INCLUDE_DIR - the directory containing uMetadata headers
+#   uMetadata_LIBRARY - the shared library
+#   uMetadata_STATIC_LIBRARY - the static library
+
+@PACKAGE_INIT@
+
+if(NOT TARGET uMetadata AND NOT TARGET uMetadata-static)
+  include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
+
+  if (TARGET uMetadata)
+    get_target_property(@PROJECT_NAME@_INCLUDE_DIR uMetadata INTERFACE_INCLUDE_DIRECTORIES)
+  else ()
+    get_target_property(@PROJECT_NAME@_INCLUDE_DIR uMetadata-static INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
+
+  if (TARGET uMetadata)
+    get_target_property(@PROJECT_NAME@_LIBRARY uMetadata LOCATION)
+  endif()
+  if (TARGET uMetadata-static)
+    get_target_property(@PROJECT_NAME@_STATIC_LIBRARY uMetadata-static LOCATION)
+  endif()
+endif()
