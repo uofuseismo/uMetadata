@@ -22,10 +22,15 @@ find_package(ZLIB REQUIRED)
 
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/uMetadata/version.hpp)
-add_library(uMetadata STATIC proto/station.proto
-            src/version.cpp
-            src/client.cpp
-            src/station.cpp)
+set(LIBRARY_SRC proto/station.proto
+    src/version.cpp
+    src/client.cpp
+    src/station.cpp)
+if (BUILD_SHARED_LIBS)
+   add_library(uMetadata SHARED ${LIBRARY_SRC})
+else()
+   add_library(uMetadata STATIC ${LIBRARY_SRC})
+endif()
 target_sources(uMetadata
                PUBLIC
                FILE_SET HEADERS
