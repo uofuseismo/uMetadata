@@ -68,7 +68,8 @@ target_include_directories(uMetadataServer
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 target_link_libraries(uMetadataServer
-                      PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3 Boost::boost Threads::Threads m)
+                      PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3
+                              Boost::boost Threads::Threads -static-libstdc++)
 
 ##########################################################################################
 #                                      Installation                                      #
