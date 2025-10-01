@@ -4,6 +4,7 @@ enable_testing()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON) 
 option(BUILD_FOR_DEBIAN "Build debian container for deployment" OFF)
+option(BUILD_TESTS "Compile regression tests" ON)
 include(GenerateExportHeader)
 include(FetchContent)
 
@@ -19,7 +20,9 @@ find_package(spdlog REQUIRED)
 find_package(SQLite3 REQUIRED)
 find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
-
+if (BUILD_TESTS)
+   find_package(Catch2 3 REQUIRED)
+endif()
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/uMetadata/version.hpp)
 set(LIBRARY_SRC proto/station.proto
@@ -69,7 +72,28 @@ target_include_directories(uMetadataServer
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 target_link_libraries(uMetadataServer
                       PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3
-                              Boost::boost Threads::Threads -static-libstdc++)
+                              Boost::boost Threads::Threads)
+
+##########################################################################################
+#                                         Tests                                          #
+##########################################################################################
+
+add_executable(unitTests 
+               testing/station.cpp)
+set_target_properties(unitTests PROPERTIES
+                      CXX_STANDARD 20
+                      CXX_STANDARD_REQUIRED YES 
+                      CXX_EXTENSIONS NO) 
+target_link_libraries(unitTests uMetadata
+                      SQLite::SQLite3 Threads::Threads
+                      Catch2::Catch2 Catch2::Catch2WithMain)
+target_include_directories(unitTests
+                           PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                           PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+                           PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
+add_test(NAME unitTests 
+         COMMAND unitTests)
+
 
 ##########################################################################################
 #                                      Installation                                      #
