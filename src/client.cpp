@@ -72,7 +72,7 @@ public:
         else
         {
             auto error = "Active stations request failed with "
-                        + std::string {status.error_code()}
+                        + std::to_string(static_cast<int> (status.error_code()))
                         + ": " 
                         + status.error_message();
             throw std::runtime_error(error);
