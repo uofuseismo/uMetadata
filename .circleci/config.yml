@@ -1,0 +1,109 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/configuration-reference
+version: 2.1 
+jobs:
+  compile-job:
+    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.    # See: https://circleci.com/docs/executor-intro/ & https://circleci.com/docs/configuration-reference/#executor-job
+    docker:
+      # Specify the version you desire here
+      # See: https://circleci.com/developer/images/image/cimg/base
+      - image: quay.io/uuss/us8base
+    resource_class: small
+    # Add steps to the job
+    # See: https://circleci.com/docs/jobs-steps/#steps-overview & https://circleci.com/docs/configuration-reference/#steps
+    steps:
+      - checkout
+      - run:
+          name: "Configure code"
+          command: |
+            if [ -d build ]; then
+               rm -rf build
+            fi
+            mkdir build
+            cd build
+            cmake .. \
+                  -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/usr/local/grpc/lib/cmake/absl:/usr/local/grpc/lib/cmake/protobuf:/usr/local/grpc/lib/cmake/utf8_range \
+                  -DCMAKE_CXX_COMPILER=clang++ \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DBUILD_SHARED_LIBS=OFF \
+                  -DBUILD_FOR_DEBIAN=ON \
+                  -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+                  -DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++"
+      - run:
+          name: "Build the code"
+          command: |
+            cd build
+            # resource class small has 1 vcpu and medium has 2
+            make -j 1
+      - run:
+          name: "Install the code"
+          command: |
+            cd build
+            make install
+      - run:
+           name: "Test the code"
+           command: |
+            cd build
+            export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/us8/lib:/usr/local/lib
+            ctest --verbose
+      - run:
+           name: "Package code"
+           command: |
+             cd build
+             mkdir -p /tmp/artifacts
+             mkdir -p /tmp/workspace
+             cpack -B /tmp/artifacts
+             rm -rf /tmp/artifacts/_CPack_Packages
+             # Later, we're going to build a container so we duplicate some effort
+             make uMetadata-deb
+             mv *-Linux.deb /tmp/workspace/
+             mv Dockerfile.deb /tmp/workspace/
+             ls /tmp/workspace/
+      - store_artifacts:
+          path: /tmp/artifacts
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - Dockerfile.deb
+            - uMetadata-*
+    # End steps
+  # End compile job
+  #deploy-job:
+  #  docker:
+  #    - image: cimg/base:2022.09
+  #  steps:
+  #    - attach_workspace:
+  #        at: /tmp/workspace
+  #    - setup_remote_docker:
+  #        docker_layer_caching: true
+  #    - run:
+  #        name: "Create docker image"
+  #        command: |
+  #          cd /tmp/workspace
+  #          # Figure out version from uMetadata-MAJOR.MINOR.PATCH-Linux.deb
+  #          debfile=$(ls *Linux.deb)
+  #          version=$(echo ${debfile} | sed 's/uMetadata-//g' | sed 's/-Linux.deb//g')
+  #          echo ${version}
+  #          docker build -t umetadata:latest -t umetadata:${version} -f ./Dockerfile.deb .
+  #    - run:
+  #        name: "Quay login"
+  #        command: |
+  #          docker login -u="$QUAY_ROBOT_USER" -p="$QUAY_ROBOT_PASSWORD" quay.io
+  #    - run:
+  #        name: "Upload docker image to quay"
+  #        command: |
+  #          docker tag umetadata quay.io/uuss/umetadata
+  #          docker push quay.io/uuss/umetadata
+  
+
+# Orchestrate jobs using workflows
+# See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
+workflows:
+  compile-workflow: 
+    jobs:
+      - compile-job
+      - deploy-job:
+          requires:
+            - compile-job
+
+

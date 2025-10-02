@@ -18,7 +18,7 @@ find_package(protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(SQLite3 REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED program_options REQUIRED)
 find_package(ZLIB REQUIRED)
 if (BUILD_TESTS)
    find_package(Catch2 3 REQUIRED)
@@ -61,9 +61,7 @@ protobuf_generate(TARGET uMetadata
                   PLUGIN "protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
                   PLUGIN_OPTIONS generate_mock_code=true
                   GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc)
-add_executable(uMetadataServer
-               src/main.cpp)
-#               src/database.cpp)
+add_executable(uMetadataServer src/server.cpp)
 set_target_properties(uMetadataServer PROPERTIES
                       CXX_STANDARD 20
                       CXX_STANDARD_REQUIRED YES
@@ -72,8 +70,9 @@ target_include_directories(uMetadataServer
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 target_link_libraries(uMetadataServer
-                      PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3
-                              Boost::boost Threads::Threads)
+                      PRIVATE gRPC::grpc gRPC::grpc++ gRPC::grpc++_reflection
+                              uMetadata spdlog::spdlog_header_only SQLite::SQLite3
+                              Boost::boost Boost::program_options Threads::Threads)
 
 ##########################################################################################
 #                                         Tests                                          #
