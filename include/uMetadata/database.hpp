@@ -11,13 +11,20 @@ class Station;
 class Database
 {
 public:
-    Database();
+    Database() = delete;
     Database(const std::filesystem::path &fileName,
              bool openReadOnly);
 
     [[nodiscard]] std::vector<Station> getAllActiveStations() const;
+    void insert(const std::vector<Station> &stations);
+    void insert(const Station &station);
+
+    void close();
 
     ~Database();
+
+    Database& operator=(const Database &) = delete;
+    Database& operator=(Database &&) noexcept = delete;
 private:
     class DatabaseImpl;
     std::unique_ptr<DatabaseImpl> pImpl;

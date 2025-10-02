@@ -28,7 +28,8 @@ configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
 set(LIBRARY_SRC proto/station.proto
     src/version.cpp
     src/client.cpp
-    src/station.cpp)
+    src/station.cpp
+src/database.cpp)
 if (BUILD_SHARED_LIBS)
    add_library(uMetadata SHARED ${LIBRARY_SRC})
 else()
@@ -61,8 +62,8 @@ protobuf_generate(TARGET uMetadata
                   PLUGIN_OPTIONS generate_mock_code=true
                   GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc)
 add_executable(uMetadataServer
-               src/main.cpp
-               src/database.cpp)
+               src/main.cpp)
+#               src/database.cpp)
 set_target_properties(uMetadataServer PROPERTIES
                       CXX_STANDARD 20
                       CXX_STANDARD_REQUIRED YES
@@ -79,7 +80,8 @@ target_link_libraries(uMetadataServer
 ##########################################################################################
 
 add_executable(unitTests 
-               testing/station.cpp)
+               testing/station.cpp
+               testing/database.cpp)# src/database.cpp)
 set_target_properties(unitTests PROPERTIES
                       CXX_STANDARD 20
                       CXX_STANDARD_REQUIRED YES 
