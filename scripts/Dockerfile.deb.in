@@ -1,7 +1,7 @@
 # Purpose: Creates the container for running the uMetadata software.
 # Usage: podman build -t umetadata:latest -f Dockerfile.deb
 #        buildah bud -t umetadata:latest -f Dockerfile.deb
-FROM debian:bookworm-slim
+FROM ubuntu:24.04
 ADD uMetadata-@PROJECT_VERSION@-Linux.deb .
 RUN apt-get update &&\
     apt-get upgrade -y &&\
@@ -13,6 +13,8 @@ RUN apt-get update &&\
     apt-get clean &&\
     rm -r /var/lib/apt/lists/* uMetadata-@PROJECT_VERSION@-Linux.deb
 
+# In k8s the updating process will have to run as root so as to modify the 
+# mounted shared file system
 RUN useradd -ms /bin/bash uMetadata
-USER uMetadata
+#USER uMetadata
 WORKDIR /home/uMetadata
