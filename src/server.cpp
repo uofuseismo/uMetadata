@@ -9,6 +9,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
+//#include <grpcpp/ext/otel_plugin.h>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -31,7 +32,7 @@ struct ProgramOptions
     std::string grpcHost{"0.0.0.0"};
     uint16_t grpcPort{50000};
     int verbosity{3};
-    bool grpcEnableReflection{true};
+    bool grpcEnableReflection{false};
 };
 
 std::string loadStringFromFile(const std::filesystem::path &path);
@@ -103,8 +104,15 @@ public:
 */
     }
 
+    void setHealthCheckService(
+        grpc::HealthCheckServiceInterface *healthCheckService)
+    {
+        mHealthCheckService = healthCheckService;
+    }
+
     mutable std::mutex mMutex;
     std::unique_ptr<UMetadata::Database> mDatabase{nullptr};
+    grpc::HealthCheckServiceInterface *mHealthCheckService{nullptr};
 };
 
 void runServer(const ::ProgramOptions &options)
@@ -141,6 +149,8 @@ void runServer(const ::ProgramOptions &options)
     builder.RegisterService(&service);
 
     std::unique_ptr<grpc::Server> server(builder.BuildAndStart()); 
+    service.setHealthCheckService(server->GetHealthCheckService());
+
     spdlog::info("Listening on " + serverAddress); 
     server->Wait(); 
 }
@@ -285,6 +295,10 @@ std::string loadStringFromFile(const std::filesystem::path &path)
     }
     options.grpcPort 
         = propertyTree.get<uint16_t> ("gRPC.port", options.grpcPort);
+
+    options.grpcEnableReflection
+       = propertyTree.get<bool> ("gRPC.enableReflection",
+                                 options.grpcEnableReflection);
 
     return options;
 }
