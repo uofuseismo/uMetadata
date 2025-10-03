@@ -68,33 +68,32 @@ jobs:
             - uMetadata-*
     # End steps
   # End compile job
-  #deploy-job:
-  #  docker:
-  #    - image: cimg/base:2022.09
-  #  steps:
-  #    - attach_workspace:
-  #        at: /tmp/workspace
-  #    - setup_remote_docker:
-  #        docker_layer_caching: true
-  #    - run:
-  #        name: "Create docker image"
-  #        command: |
-  #          cd /tmp/workspace
-  #          # Figure out version from uMetadata-MAJOR.MINOR.PATCH-Linux.deb
-  #          debfile=$(ls *Linux.deb)
-  #          version=$(echo ${debfile} | sed 's/uMetadata-//g' | sed 's/-Linux.deb//g')
-  #          echo ${version}
-  #          docker build -t umetadata:latest -t umetadata:${version} -f ./Dockerfile.deb .
-  #    - run:
-  #        name: "Quay login"
-  #        command: |
-  #          docker login -u="$QUAY_ROBOT_USER" -p="$QUAY_ROBOT_PASSWORD" quay.io
-  #    - run:
-  #        name: "Upload docker image to quay"
-  #        command: |
-  #          docker tag umetadata quay.io/uuss/umetadata
-  #          docker push quay.io/uuss/umetadata
-  
+  deploy-job:
+    docker:
+      - image: cimg/base:2022.09
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: "Create docker image"
+          command: |
+            cd /tmp/workspace
+            # Figure out version from uMetadata-MAJOR.MINOR.PATCH-Linux.deb
+            debfile=$(ls *Linux.deb)
+            version=$(echo ${debfile} | sed 's/uMetadata-//g' | sed 's/-Linux.deb//g')
+            echo ${version}
+            docker build -t umetadata:latest -t umetadata:${version} -f ./Dockerfile.deb .
+      - run:
+          name: "Quay login"
+          command: |
+            docker login -u="${QUAY_ROBOT_USER}" -p="${QUAY_ROBOT_PASSWORD}" quay.io
+      - run:
+          name: "Upload docker image to quay"
+          command: |
+            docker tag umetadata quay.io/uuss/umetadata
+            docker push quay.io/uuss/umetadata
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
@@ -102,8 +101,8 @@ workflows:
   compile-workflow: 
     jobs:
       - compile-job
-      #- deploy-job:
-      #    requires:
-      #      - compile-job
+      - deploy-job:
+          requires:
+            - compile-job
 
 
