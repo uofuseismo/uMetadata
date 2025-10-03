@@ -41,24 +41,24 @@ jobs:
             cd build
             make install
       - run:
-           name: "Test the code"
-           command: |
+          name: "Test the code"
+          command: |
             cd build
             export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/us8/lib:/usr/local/lib
             ctest --verbose
       - run:
-           name: "Package code"
-           command: |
-             cd build
-             mkdir -p /tmp/artifacts
-             mkdir -p /tmp/workspace
-             cpack -B /tmp/artifacts
-             rm -rf /tmp/artifacts/_CPack_Packages
-             # Later, we're going to build a container so we duplicate some effort
-             make uMetadata-deb
-             mv *-Linux.deb /tmp/workspace/
-             mv Dockerfile.deb /tmp/workspace/
-             ls /tmp/workspace/
+          name: "Package code"
+          command: |
+            cd build
+            mkdir -p /tmp/artifacts
+            mkdir -p /tmp/workspace
+            cpack -B /tmp/artifacts
+            rm -rf /tmp/artifacts/_CPack_Packages
+            # Later, we're going to build a container so we duplicate some effort
+            make uMetadata-deb
+            mv *-Linux.deb /tmp/workspace/
+            mv Dockerfile.deb /tmp/workspace/
+            ls /tmp/workspace/
       - store_artifacts:
           path: /tmp/artifacts
       - persist_to_workspace:
@@ -80,6 +80,7 @@ jobs:
           name: "Create docker image"
           command: |
             cd /tmp/workspace
+            ls
             # Figure out version from uMetadata-MAJOR.MINOR.PATCH-Linux.deb
             debfile=$(ls *Linux.deb)
             version=$(echo ${debfile} | sed 's/uMetadata-//g' | sed 's/-Linux.deb//g')
