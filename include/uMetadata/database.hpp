@@ -2,6 +2,7 @@
 #define UMETADATA_DATABASE_HPP
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <vector>
 namespace UMetadata
 {
@@ -16,6 +17,7 @@ public:
              bool openReadOnly);
 
     [[nodiscard]] std::vector<Station> getAllActiveStations() const;
+    [[nodiscard]] std::optional<Station> getActiveStationInformation(const std::string &network, const std::string &name) const;
     void insert(const std::vector<Station> &stations);
     void insert(const Station &station);
 

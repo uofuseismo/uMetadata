@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include "uMetadata/database.hpp"
 #include "uMetadata/station.hpp"
+#include "utilities.hpp"
 #define STATION_TABLE "station"
 #define CHANNEL_TABLE "channel"
 #define POLE_ZERO_TABLE "poles_and_zeros"
@@ -43,6 +44,7 @@
 
 namespace
 {
+/*
 [[nodiscard]] std::chrono::microseconds getNow() 
 {    
      auto now    
@@ -50,6 +52,7 @@ namespace
           ((std::chrono::high_resolution_clock::now()).time_since_epoch());
      return now;        
 }                    
+*/
 [[nodiscard]] UMetadata::Station unpackStationRow(sqlite3_stmt *statement)
 {
      UMetadata::Station result;
@@ -171,6 +174,20 @@ public:
     }
     void openCreateReadWrite(const std::filesystem::path &fileName)
     {
+        auto parentPath = fileName.parent_path();
+        if (!parentPath.empty())
+        {
+            if (!std::filesystem::exists(parentPath))
+            {
+                spdlog::info(parentPath.string()
+                           + " does not exist; trying to make path");
+                if (!std::filesystem::create_directories(parentPath))
+                {
+                    throw std::runtime_error("Could not create path "
+                                           + parentPath.string());
+                }
+            }
+        }
         mURI = fileName.string();
         spdlog::debug("Creating read-write database");
         auto returnCode = sqlite3_open_v2(mURI.c_str(),
@@ -349,6 +366,60 @@ CREATE TABLE station (
                         + std::string {e.what()});
             return;
         }
+    }
+    std::optional<UMetadata::Station>
+        getActiveStationInformation(const std::string &network,
+                                    const std::string &name) const
+    {
+        if (!mDatabaseHandle)
+        {                  
+            throw std::runtime_error("database not initialized");
+        }
+        const std::string_view sql{
+R"""(
+SELECT network, name, description, latitude, longitude, elevation, start_time, end_time, last_modified FROM station WHERE
+  network = ?1 AND name = ?2 AND
+  unixepoch(CURRENT_TIMESTAMP) >= start_time AND unixepoch(CURRENT_TIMESTAMP) <= end_time LIMIT 1
+)"""};
+        sqlite3_stmt *statement{nullptr};
+        auto returnCode = sqlite3_prepare_v2(mDatabaseHandle,
+                                             sql.data(),
+                                             -1, 
+                                             &statement,
+                                             nullptr);
+        SQLITE_CHECK_PREPARE(returnCode, statement);
+        returnCode = sqlite3_bind_text(statement,
+                                       1,
+                                       network.data(),
+                                       network.size(),
+                                       SQLITE_STATIC);
+        SQLITE_CHECK_BIND(returnCode, statement);
+        returnCode = sqlite3_bind_text(statement,
+                                       2,
+                                       name.data(),
+                                       name.size(),
+                                       SQLITE_STATIC);
+        SQLITE_CHECK_BIND(returnCode, statement);
+        UMetadata::Station station;
+        bool found{false};
+        returnCode = sqlite3_step(statement);
+        if (returnCode == SQLITE_ROW)
+        {
+            try
+            {
+                station = ::unpackStationRow(statement);
+                found = true;
+            }
+            catch (const std::exception &e)
+            {
+                spdlog::warn("Failed to unpack row for "
+                           + network + "." + name);
+            }
+        }
+        returnCode = sqlite3_finalize(statement);
+        SQLITE_CHECK_FINALIZE(returnCode);
+        return found ? std::optional<UMetadata::Station> {std::move(station)}
+                     : std::nullopt;
     }
     std::vector<UMetadata::Station> getAllActiveStations() const
     {
@@ -569,6 +640,16 @@ void Database::insert(const Station &station)
 std::vector<UMetadata::Station> Database::getAllActiveStations() const
 {
     return pImpl->getAllActiveStations();
+}
+
+std::optional<UMetadata::Station> Database::getActiveStationInformation(
+    const std::string &networkIn, const std::string &nameIn) const
+{
+    auto network = ::transformString(networkIn);
+    auto name = ::transformString(nameIn);
+    if (network.empty()){throw std::invalid_argument("Network is empty");}
+    if (name.empty()){throw std::invalid_argument("Name is empty");}
+    return pImpl->getActiveStationInformation(network, name);
 }
 
 /// Destructor

@@ -77,13 +77,25 @@ target_link_libraries(uMetadataServer
                               uMetadata spdlog::spdlog_header_only SQLite::SQLite3
                               Boost::boost Boost::program_options Threads::Threads)
 
+add_executable(uMetadataUpdater src/updater.cpp)
+set_target_properties(uMetadataUpdater PROPERTIES
+                      CXX_STANDARD 20
+                      CXX_STANDARD_REQUIRED YES 
+                      CXX_EXTENSIONS NO) 
+target_include_directories(uMetadataUpdater
+                           PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
+target_link_libraries(uMetadataUpdater
+                      PRIVATE uMetadata spdlog::spdlog_header_only SQLite::SQLite3
+                              Boost::boost Boost::program_options Threads::Threads)
+
+
 ##########################################################################################
 #                                         Tests                                          #
 ##########################################################################################
 
 add_executable(unitTests 
                testing/station.cpp
-               testing/database.cpp)# src/database.cpp)
+               testing/database.cpp)
 set_target_properties(unitTests PROPERTIES
                       CXX_STANDARD 20
                       CXX_STANDARD_REQUIRED YES 
@@ -93,6 +105,7 @@ target_link_libraries(unitTests uMetadata
                       Catch2::Catch2 Catch2::Catch2WithMain)
 target_include_directories(unitTests
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                           PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/data>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
 add_test(NAME unitTests 
@@ -118,7 +131,7 @@ install(TARGETS uMetadata
         FILE_SET HEADERS
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         COMPONENT libraries)
-install(TARGETS uMetadataServer
+install(TARGETS uMetadataServer uMetadataUpdater
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         COMPONENT applications)
 export(EXPORT ${PROJECT_NAME}-targets
@@ -142,7 +155,7 @@ if (${BUILD_FOR_DEBIAN})
                      COMMENT "Creating deb file for ${PROJECT_NAME}"
                      COMMAND ${CMAKE_CPACK_COMMAND} -G DEB 
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM)
-   add_dependencies(${PROJECT_NAME}-deb uMetadataServer)
+   add_dependencies(${PROJECT_NAME}-deb uMetadataServer uMetadataUpdater)
    find_program(buildah_EXECUTABLE buildah)
    if (buildah_EXECUTABLE)
       add_custom_target(buildah

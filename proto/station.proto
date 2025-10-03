@@ -5,8 +5,10 @@ package UMetadata.GRPC;
 // The service that returns station information.
 service Information
 {
-    /// Gets the currently running stations in the network.
+    // Gets the currently running stations in the network.
     rpc GetAllActiveStations(AllActiveStationsRequest) returns(StationsResponse) {};
+    // Gets the information corresponding to the currently running station.
+    rpc GetActiveStation(ActiveStationRequest) returns(Station) {};
     /// Gets all stations in the network.
 //    rpc GetAllStations(AllStationsRequest) returns(StationInformationResponse) {};
 }
@@ -49,4 +51,13 @@ message AllActiveStationsRequest
 // Requests all stations.
 message AllStationsRequest
 {
+}
+
+// Requests a currently active (running) station.
+message ActiveStationRequest
+{
+    // The network code - e.g., UU.
+    string network = 1;
+    // The staiton name - e.g., CTU.
+    string name = 2;
 }

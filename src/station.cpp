@@ -4,12 +4,14 @@
 #include <cassert>
 #endif
 #include "uMetadata/station.hpp"
+#include "utilities.hpp"
 #include "proto/station.pb.h"
 
 using namespace UMetadata;
 
 namespace
 {
+/*
 [[nodiscard]] std::chrono::microseconds getNow() 
 {                   
      auto now    
@@ -17,6 +19,7 @@ namespace
           ((std::chrono::high_resolution_clock::now()).time_since_epoch());
      return now;    
 }                
+*/
 
 [[nodiscard]] std::chrono::seconds getYear3000() noexcept
 {
@@ -24,6 +27,7 @@ namespace
 
 }
 
+/*
 [[nodiscard]] std::string transformString(const std::string_view &input)
 {
     std::string result{input.data(), input.size()};
@@ -32,6 +36,7 @@ namespace
     std::transform(result.begin(), result.end(), result.begin(), ::toupper);
     return result;
 }
+*/
 
 [[nodiscard]] double lonTo180(const double lonIn)
 {

@@ -96,12 +96,44 @@ public:
             }
         };
         return new Reactor(*mDatabase, *request, response);
-/*
+    }
+    grpc::ServerUnaryReactor*
+        GetActiveStation(grpc::CallbackServerContext *context,
+                         const UMetadata::GRPC::ActiveStationRequest *request,
+                         UMetadata::GRPC::Station *response) override
+    {   
         // Get the active stations
+        auto network = request->network();
+        auto name = request->name();
+        grpc::Status status{grpc::Status::OK};
+        try
+        {
+            auto result = mDatabase->getActiveStationInformation(network, name);
+            if (!result)
+            {
+                status = grpc::Status{grpc::StatusCode::NOT_FOUND,
+                                      "Could not find "
+                                      + network + "." + name};
+            }
+            else
+            {
+                *response = result->toProtobuf();
+            }
+        }
+        catch (const std::invalid_argument &e)
+        {
+            status = grpc::Status{grpc::StatusCode::INVALID_ARGUMENT,
+                                  std::string {e.what()}};
+        }
+        catch (const std::exception &e)
+        {
+            spdlog::warn(e.what());
+            status = grpc::Status{grpc::StatusCode::UNKNOWN,
+                                  "Server-side query failed"};
+        }
         auto reactor = context->DefaultReactor();
-        reactor->Finish(grpc::Status::OK);
+        reactor->Finish(status);
         return reactor;
-*/
     }
 
     void setHealthCheckService(
@@ -176,7 +208,7 @@ int main(int argc, char *argv[])
     ::ProgramOptions programOptions;
     try
     {
-        programOptions = parseIniFile(iniFile);
+        programOptions = ::parseIniFile(iniFile);
     }
     catch (const std::exception &e)
     {
@@ -298,9 +330,33 @@ std::string loadStringFromFile(const std::filesystem::path &path)
         = propertyTree.get<uint16_t> ("gRPC.port", options.grpcPort);
 
     options.grpcEnableReflection
-       = propertyTree.get<bool> ("gRPC.enableReflection",
-                                 options.grpcEnableReflection);
+        = propertyTree.get<bool> ("gRPC.enableReflection",
+                                  options.grpcEnableReflection);
 
+    std::string grpcServerKey = "";
+    grpcServerKey 
+        = propertyTree.get<std::string> ("gRPC.serverKey",
+                                         grpcServerKey);
+    std::string grpcServerCertificate = "";
+    grpcServerCertificate
+        = propertyTree.get<std::string> ("gRPC.serverCertificate",
+                                         grpcServerCertificate);
+    if (!grpcServerKey.empty() && !grpcServerCertificate.empty())
+    {
+        if (!std::filesystem::exists(grpcServerKey))
+        {
+            throw std::invalid_argument("gRPC server key file "
+                                      + grpcServerKey + " does not exist");
+        }
+        if (!std::filesystem::exists(grpcServerCertificate))
+        {
+            throw std::invalid_argument("gRPC server certificate file "
+                                      + grpcServerCertificate
+                                      + " does not exist");
+        }
+        options.grpcServerKey = grpcServerKey;
+        options.grpcServerCertificate = grpcServerCertificate;
+    }
     return options;
 }
 

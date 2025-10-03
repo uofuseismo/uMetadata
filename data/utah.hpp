@@ -1,24 +1,10 @@
 #ifndef UTAH_DEFAULT
 #define UTAH_DEFAULT
 #include <uMetadata/station.hpp>
-namespace {
-[[nodiscard]] UMetadata::Station toStation(const std::string &network,
-     const std::string &name, const std::string &description,
-     const double latitude, const double longitude, const double elevation,
-     const int64_t startTime, const int64_t endTime, const int64_t lastModified)
+#include "toStation.hpp"
+namespace
 {
-    UMetadata::Station result;
-    result.setNetwork(network);
-    result.setName(name);
-    result.setDescription(description);
-    result.setLatitude(latitude);
-    result.setLongitude(longitude);
-    result.setElevation(elevation);
-    result.setStartAndEndTime( std::pair {std::chrono::seconds {startTime}, std::chrono::seconds {endTime}} );
-    result.setLastModified( std::chrono::seconds {lastModified} );
-    return result;
-}
-[[nodiscard]] std::vector<UMetadata::Station> createStations()
+[[nodiscard]] std::vector<UMetadata::Station> createStationsUtah()
 {
     std::vector<UMetadata::Station> stations;
     stations.push_back(::toStation("C0", "MOFF", "NW Moffat County, CO", 40.987495, -108.758507, 2117.0, 1756857600, 32503680000, 1759251505));
