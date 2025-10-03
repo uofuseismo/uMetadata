@@ -125,6 +125,7 @@ void runServer(const ::ProgramOptions &options)
     grpc::EnableDefaultHealthCheckService(true);
     if (options.grpcEnableReflection)
     {
+        spdlog::info("Enabling reflection");
         grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     } 
  

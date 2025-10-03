@@ -73,7 +73,7 @@ target_link_libraries(uMetadataServer
                       PRIVATE gRPC::grpc
                               gRPC::grpc++
                               gRPC::grpc++_reflection
-                              #gRPC::grpcpp_otel_plugin
+                              gRPC::grpcpp_otel_plugin
                               uMetadata spdlog::spdlog_header_only SQLite::SQLite3
                               Boost::boost Boost::program_options Threads::Threads)
 
