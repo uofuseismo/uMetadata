@@ -18,6 +18,10 @@
 #include "proto/station.pb.h"
 #include "proto/station.grpc.pb.h"
 
+#include "data/utah.hpp"
+#include "data/ynp.hpp"
+
+
 #define APPLICATION_NAME "uMetadataServer"
 
 namespace
@@ -33,11 +37,13 @@ struct ProgramOptions
     uint16_t grpcPort{50000};
     int verbosity{3};
     bool grpcEnableReflection{false};
+bool isUtah{true};
 };
 
 std::string loadStringFromFile(const std::filesystem::path &path);
 std::pair<std::string, bool> parseCommandLineOptions(int argc, char *argv[]);
 ::ProgramOptions parseIniFile(const std::filesystem::path &iniFile);
+void setVerbosityForSPDLOG(int verbosity);
 
 }
 
@@ -48,9 +54,18 @@ public:
     explicit StationInformationServiceImpl(const ::ProgramOptions &options)
     {
         constexpr bool openReadOnly{true};
-        mDatabase
-            = std::make_unique<UMetadata::Database>
-              (options.sqlite3Database, openReadOnly); 
+        try
+        {
+            mDatabase
+                = std::make_unique<UMetadata::Database>
+                  (options.sqlite3Database, openReadOnly); 
+        }
+        catch (const std::exception &e)
+        {
+            spdlog::critical("Failed to open read-only connection because "
+                           + std::string {e.what()});
+            throw std::runtime_error("Failed to open database connection");
+        }
     }
     grpc::ServerUnaryReactor*
         GetAllActiveStations(grpc::CallbackServerContext *context,
@@ -215,10 +230,34 @@ int main(int argc, char *argv[])
         spdlog::error(e.what());
         return EXIT_FAILURE;
     }
-    if (programOptions.verbosity <= 1){spdlog::set_level(spdlog::level::critical);}
-    if (programOptions.verbosity == 2){spdlog::set_level(spdlog::level::warn);}
-    if (programOptions.verbosity == 3){spdlog::set_level(spdlog::level::info);}
-    if (programOptions.verbosity >= 4){spdlog::set_level(spdlog::level::debug);}
+    ::setVerbosityForSPDLOG(programOptions.verbosity);
+
+// kludge so i can test grpc in k8s
+try 
+{   
+    constexpr bool readOnly{false};
+    UMetadata::Database database{programOptions.sqlite3Database, readOnly};
+
+    if (programOptions.isUtah)
+    {
+        spdlog::info("Making utah stations");
+        auto stations = ::createStationsUtah();
+        database.insert(stations);
+    }
+    else
+    {
+        spdlog::info("Making ynp stations");
+        auto stations = ::createStationsYNP();
+        database.insert(stations);
+    }
+    database.close();
+}   
+catch (const std::exception &e)
+{
+    spdlog::critical(e.what());
+    return EXIT_FAILURE;
+}
+
 
     try
     {
@@ -290,6 +329,16 @@ std::string loadStringFromFile(const std::filesystem::path &path)
     return result;
 }
 
+void setVerbosityForSPDLOG(const int verbosity)
+{
+    if (verbosity <= 1)
+    {
+        spdlog::set_level(spdlog::level::critical);
+    }
+    if (verbosity == 2){spdlog::set_level(spdlog::level::warn);}
+    if (verbosity == 3){spdlog::set_level(spdlog::level::info);}
+    if (verbosity >= 4){spdlog::set_level(spdlog::level::debug);}
+}
 
 ::ProgramOptions parseIniFile(const std::filesystem::path &iniFile)
 {   
@@ -310,15 +359,19 @@ std::string loadStringFromFile(const std::filesystem::path &path)
     options.verbosity
         = propertyTree.get<int> ("General.verbosity", options.verbosity);
 
+options.isUtah = propertyTree.get<bool> ("General.isUtah", options.isUtah);
+
     options.sqlite3Database
         = propertyTree.get<std::string> ("SQLite3.databaseFile",
                                          options.sqlite3Database.string());
+/*
     if (!std::filesystem::exists(options.sqlite3Database))
     {
          throw std::invalid_argument("SQLite3 database " 
                                    + options.sqlite3Database.string()
                                    + " does not exist");
     }
+*/
 
     options.grpcHost
         = propertyTree.get<std::string> ("gRPC.host", options.grpcHost);

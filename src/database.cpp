@@ -122,6 +122,7 @@ public:
             {
                 openCreateReadWrite(fileName);
                 createStationTable();
+                createChannelTable();
             }
             else
             {
@@ -137,7 +138,7 @@ public:
         }
         //mURI = "file:/" + fileName.string();
         mURI = fileName.string();
-        spdlog::debug("Opening sqlite3 " + mURI + " in read-only mode");
+        spdlog::info("Opening sqlite3 " + mURI + " in read-only mode");
         auto returnCode = sqlite3_open_v2(mURI.c_str(),
                                           &mDatabaseHandle,
                                           SQLITE_OPEN_READONLY |
@@ -156,7 +157,7 @@ public:
     {
         //mURI = "file:/" + fileName.string();
         mURI = fileName.string();
-        spdlog::debug("Opening read-write database");
+        spdlog::info("Opening " + mURI + " in read-write mode");
         auto returnCode = sqlite3_open_v2(mURI.c_str(),
                                           &mDatabaseHandle,
                                           SQLITE_OPEN_READWRITE |
@@ -189,7 +190,7 @@ public:
             }
         }
         mURI = fileName.string();
-        spdlog::debug("Creating read-write database");
+        spdlog::info("Creating " + mURI + " as read-write database");
         auto returnCode = sqlite3_open_v2(mURI.c_str(),
                                           &mDatabaseHandle,
                                           SQLITE_OPEN_READWRITE |
@@ -331,6 +332,47 @@ SELECT COUNT(*) FROM station WHERE
             spdlog::warn("Failed to finalize create station table stmt");
         }
     }
+    void createChannelTable()
+    {
+        const std::string_view channelTable{CHANNEL_TABLE};
+        try
+        {
+            if (tableExists(channelTable))
+            {
+                spdlog::info(std::string {channelTable}
+                            + " already exists; will not create");
+                return;
+            }
+            const std::string_view schema{
+R"""(
+CREATE TABLE channel (
+  identifier INTEGER PRIMARY KEY AUTOINCREMENT,
+  station_identifier INTEGER,
+  name TEXT,
+  location_code TEXT DEFAULT NULL,
+  latitude DOUBLE NOT NULL CHECK( latitude >= -90 AND latitude <= 90),
+  longitude DOUBLE NOT NULL,
+  elevation DOUBLE NOT NULL CHECK( elevation >= -10000 AND elevation <= 8600 ),
+  sampling_rate DOUBLE NOT NULL CHECK ( sampling_rate > 0 ),
+  azimuth DOUBLE CHECK( azimuth >= 0 AND azimuth < 360 ),
+  dip DOUBLE CHECK( dip >= -90 AND dip <= -90 ),
+  start_time BIGINT NOT NULL,
+  end_time BIGINT DEFAULT 32503680000 CHECK (end_time > start_time),
+  last_modified DOUBLE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(station_identifier, name, location_code, start_time),
+  FOREIGN KEY(station_identifier) REFERENCES station(identifier)
+)
+)"""};
+            createTable(schema);
+            spdlog::info("Successfully created channel table");
+        }
+        catch (const std::exception &e)
+        {
+            spdlog::error("Failed to create channel table because "
+                        + std::string {e.what()});
+            return;
+        }
+    }
     void createStationTable()
     {
         const std::string_view stationTable{STATION_TABLE};
@@ -345,6 +387,7 @@ SELECT COUNT(*) FROM station WHERE
             const std::string_view schema{
 R"""(
 CREATE TABLE station (
+  identifier INTEGER PRIMARY KEY AUTOINCREMENT,
   network TEXT,
   name TEXT,
   description TEXT DEFAULT NULL,
@@ -357,8 +400,8 @@ CREATE TABLE station (
   UNIQUE(network, name, start_time)
 )
 )"""};
-             createTable(schema);
-             spdlog::info("Successfully created station table");
+            createTable(schema);
+            spdlog::info("Successfully created station table");
         }
         catch (const std::exception &e)
         {
@@ -478,7 +521,7 @@ SELECT network, name, description, latitude, longitude, elevation, start_time, e
         }   
         if (!mHaveReadWriteDatabase)
         {
-            throw std::runtime_error("database not must be read-write");
+            throw std::runtime_error("database must be read-write");
         }
         if (exists(station))
         {
@@ -576,7 +619,7 @@ INSERT INTO station (network, name, latitude, longitude, elevation, start_time, 
         auto returnCode = SQLITE_OK;
         if (mHaveReadOnlyDatabase)
         {
-            spdlog::debug("Closing read-only database " + mURI);
+            spdlog::info("Closing read-only database " + mURI);
             returnCode = sqlite3_close(mDatabaseHandle);
             if (returnCode != SQLITE_OK)
             {
@@ -587,7 +630,7 @@ INSERT INTO station (network, name, latitude, longitude, elevation, start_time, 
         }
         if (mHaveReadWriteDatabase)
         {
-            spdlog::debug("Closing read-writedatabase " + mURI);
+            spdlog::info("Closing read-write database " + mURI);
             returnCode = sqlite3_close(mDatabaseHandle);
             if (returnCode != SQLITE_OK)
             {
