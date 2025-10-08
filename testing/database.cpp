@@ -6,6 +6,8 @@
 #include "uMetadata/channel.hpp"
 #include "data/utah.hpp"
 #include "data/ynp.hpp"
+#include "data/utahChannels.hpp"
+#include "data/ynpChannels.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -58,6 +60,7 @@ TEST_CASE("UMetadata::Database", "[sqlite3]")
 
     UMetadata::Database database{databaseFile, false}; 
     auto activeStationsRef = ::createStationsUtah();
+    auto activeChannelsRef = ::createChannelsUtah(); 
     database.insert(activeStationsRef);
 
     // Fail adding
