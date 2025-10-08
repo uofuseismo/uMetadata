@@ -27,10 +27,11 @@ if (BUILD_TESTS)
 endif()
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/uMetadata/version.hpp)
-set(LIBRARY_SRC proto/station.proto
+set(LIBRARY_SRC proto/station.proto proto/channel.proto
     src/version.cpp
     src/client.cpp
     src/station.cpp
+    src/channel.cpp
 src/database.cpp)
 if (BUILD_SHARED_LIBS)
    add_library(uMetadata SHARED ${LIBRARY_SRC})
