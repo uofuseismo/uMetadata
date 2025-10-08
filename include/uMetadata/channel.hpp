@@ -87,7 +87,7 @@ public:
     ///                       measured positive east of 0.
     void setLongitude(double longitude) noexcept;
     /// @result The channel's longitude in degrees.  This will be
-    ///         the range of [0, 360).
+    ///         the range of [-180, 180).
     /// @throws std::runtime_error if \c hasLongitude() is false.
     [[nodiscard]] double getLongitude() const;
     /// @result True indicates the longitude was set.
@@ -102,6 +102,38 @@ public:
     [[nodiscard]] double getElevation() const;
     /// @result True indicates the elevation was set.
     [[nodiscard]] bool hasElevation() const noexcept;
+
+    /// @brief Sets the channel's nominal sampling rate.
+    /// @param[in] samplingRate  The nominal sampling rate in Hz.
+    void setSamplingRate(double samplingRate);
+    /// @result The sampling rate in Hz.
+    /// @throws std::runtime_error if \hasSamplingRate() is false.
+    [[nodiscard]] double getSamplingRate() const;
+    /// @result True indicates the sampling rate was set.
+    [[nodiscard]] bool hasSamplingRate() const noexcept;
+
+    /// @brief Sets the azimuth of the channel.
+    /// @param[in] azimuth  The channel's azimuth measured in degrees positive
+    ///                     east of north - i.e., 0 is north and 90 is east.
+    /// @throws std::invalid_argument if azimuth is not in the range [0, 360).
+    void setAzimuth(double azimuth);
+    /// @result The azimuth of the channel in degrees.
+    /// @throws std::runtime_error if \c hasAzimuth() is false.
+    [[nodiscard]] double getAzimuth() const;
+    /// @result True indicates the azimuth was set.
+    [[nodiscard]] bool hasAzimuth() const noexcept;
+
+    /// @brief Sets the dip of the channel.
+    /// @param[in] dip  The channel's dip measured in degrees positive down from
+    ///                 horizontal - i.e., -90 is positive up and 90 is positive
+    ///                 down.
+    /// @throws std::invalid_argument if azimuth is not in the range [-90, 90].
+    void setDip(double dip);
+    /// @result The dip of the channel in degrees.
+    /// @throws std::runtime_error if \c hasDip() is false.
+    [[nodiscard]] double getDip() const;
+    /// @result True indicates the dip was set.
+    [[nodiscard]] bool hasDip() const noexcept;
 
     /// @brief Sets the start and end time of the channel.
     /// @param[in] startAndEndTime  The start and end UTC time of the channel 
@@ -124,7 +156,8 @@ public:
     ///                          when the channel information was last modified.
     void setLastModified(const std::chrono::microseconds &lastModfied) noexcept;
     /// @result The time was the channel's information was modified.
-    [[nodiscard]] std::optional<std::chrono::microseconds> getLastModified() const noexcept;
+    /// @note By default this is the time of class creation.
+    [[nodiscard]] std::chrono::microseconds getLastModified() const noexcept;
     /// @}
 
     /// @result The channel expressed as a protobuf for gRPC communication.

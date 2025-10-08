@@ -5,6 +5,7 @@ enable_testing()
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON) 
 option(BUILD_FOR_DEBIAN "Build debian container for deployment" OFF)
 option(BUILD_TESTS "Compile regression tests" ON)
+option(ENABLE_CODE_ANALYSIS "Run the cppcheck static analysis tool" OFF)
 include(GenerateExportHeader)
 include(FetchContent)
 
@@ -25,6 +26,20 @@ find_package(Threads REQUIRED)
 if (BUILD_TESTS)
    find_package(Catch2 3 REQUIRED)
 endif()
+if (ENABLE_CODE_ANALYSIS)
+   find_program(cppcheck_exe NAMES cppcheck REQUIRED)
+   set(cppcheck_opts
+       --enable=all
+       --inline-suppr
+       --quiet
+       --suppress=missingIncludeSystem
+       --suppress=constParameter
+       --suppress=unmatchedSuppression
+       --suppress=unusedFunction
+       "--template='{file}:{line}: warning: {id} ({severity}): {message}'")
+   set(CMAKE_CXX_CPPCHECK ${cppcheck_exe} --std=c++20 ${cppcheck_opts})
+endif()
+
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/uMetadata/version.hpp)
 set(LIBRARY_SRC proto/station.proto proto/channel.proto
@@ -98,6 +113,7 @@ target_link_libraries(uMetadataUpdater
 
 add_executable(unitTests 
                testing/station.cpp
+               testing/channel.cpp
                testing/database.cpp)
 set_target_properties(unitTests PROPERTIES
                       CXX_STANDARD 20

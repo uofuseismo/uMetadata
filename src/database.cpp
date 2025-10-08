@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include "uMetadata/database.hpp"
 #include "uMetadata/station.hpp"
+#include "uMetadata/channel.hpp"
 #include "utilities.hpp"
 #define STATION_TABLE "station"
 #define CHANNEL_TABLE "channel"
@@ -540,10 +541,7 @@ SELECT network, name, description, latitude, longitude, elevation, start_time, e
         auto startTime = static_cast<sqlite3_int64> (startAndEndTime.first.count());
         auto endTime = static_cast<sqlite3_int64> (startAndEndTime.second.count());
         double lastModified = ::getNow().count()*1.e-6;
-        if (station.getLastModified())
-        {
-            lastModified = station.getLastModified()->count()*1.e-6;
-        }
+        lastModified = station.getLastModified().count()*1.e-6;
 
         const std::string_view sql{
 R"""(

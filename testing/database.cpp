@@ -3,6 +3,7 @@
 #include <string>
 #include "uMetadata/database.hpp"
 #include "uMetadata/station.hpp"
+#include "uMetadata/channel.hpp"
 #include "data/utah.hpp"
 #include "data/ynp.hpp"
 #include <catch2/catch_test_macros.hpp>
@@ -26,8 +27,8 @@ bool operator==(const UMetadata::Station &lhs,
     auto [startRef, endRef] = rhs.getStartAndEndTime();
     if (start != startRef){return false;}
     if (end != endRef){return false;}
-    auto lastModified = *lhs.getLastModified();
-    auto lastModifiedRef = *rhs.getLastModified();
+    auto lastModified = lhs.getLastModified();
+    auto lastModifiedRef = rhs.getLastModified();
     if (lastModified != lastModifiedRef){return false;}
     //std::cout << lastModified.count() << " " << lastModifiedRef.count() << std::endl;
     if (lhs.getDescription() && rhs.getDescription())

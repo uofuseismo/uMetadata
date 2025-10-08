@@ -68,7 +68,7 @@ public:
     ///                       measured positive east of 0.
     void setLongitude(double longitude) noexcept;
     /// @result The station's longitude in degrees.  This will be
-    ///         the range of [0, 360).
+    ///         the range of [-180, 180).
     /// @throws std::runtime_error if \c hasLongitude() is false.
     [[nodiscard]] double getLongitude() const;
     /// @result True indicates the longitude was set.
@@ -106,9 +106,12 @@ public:
     /// @result A description of the staiton.
     [[nodiscard]] std::optional<std::string> getDescription() const noexcept;
 
-    void setLastModified(const std::chrono::microseconds &lastModfied) noexcept;
+    /// @param[in] lastModified  The last UTC time this station's information
+    ///                          was modified in microseconds since the epoch.
+    void setLastModified(const std::chrono::microseconds &lastModified) noexcept;
     /// @result The time was the station's information was modified.
-    [[nodiscard]] std::optional<std::chrono::microseconds> getLastModified() const noexcept;
+    /// @note By default this will be the class creation time.
+    [[nodiscard]] std::chrono::microseconds getLastModified() const noexcept;
     /// @}
 
     /// @result The station expressed as a protobuf for gRPC communication.

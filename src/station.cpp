@@ -9,70 +9,6 @@
 
 using namespace UMetadata;
 
-namespace
-{
-/*
-[[nodiscard]] std::chrono::microseconds getNow() 
-{                   
-     auto now    
-        = std::chrono::duration_cast<std::chrono::microseconds>
-          ((std::chrono::high_resolution_clock::now()).time_since_epoch());
-     return now;    
-}                
-*/
-
-[[nodiscard]] std::chrono::seconds getYear3000() noexcept
-{
-    return std::chrono::seconds {32503680000};
-
-}
-
-/*
-[[nodiscard]] std::string transformString(const std::string_view &input)
-{
-    std::string result{input.data(), input.size()};
-    result.erase(std::remove_if(result.begin(), result.end(), isspace),
-                 result.end());
-    std::transform(result.begin(), result.end(), result.begin(), ::toupper);
-    return result;
-}
-*/
-
-[[nodiscard]] double lonTo180(const double lonIn)
-{
-    auto lon = lonIn;
-    if (lon < -180)
-    {
-        for (int k = 0; k < std::numeric_limits<int>::max(); ++k)
-        {
-            auto tempLon = lon + k*360;
-            if (tempLon >= -180)
-            {
-                lon = tempLon;
-                break;
-            }
-        }
-    }
-    if (lon >= 180)
-    {
-        for (int k = 0; k < std::numeric_limits<int>::max(); ++k)
-        {
-            auto tempLon = lon - k*360;
-            if (tempLon < 180)
-            {
-                lon = tempLon;
-                break;
-            }
-        }
-    }
-#ifndef NDEBUG
-    assert(lon >= -180 && lon < 180);
-#endif
-    return lon;
-}
-
-}
-
 class Station::StationImpl
 {
 public:
@@ -90,7 +26,6 @@ public:
     bool mHasElevation{false};
     bool mHasStartAndEndTime{false};
     bool mHasDescription{false};
-    bool mHasLastModified{false};
 };
 
 /// Constructor
@@ -125,14 +60,7 @@ Station::Station(const UMetadata::GRPC::Station &station) :
     work.setLatitude(station.latitude()); 
     work.setElevation(station.elevation());
     auto lastModified = station.last_modified_mus();
-    if (lastModified)
-    {
-        work.setLastModified(std::chrono::microseconds {lastModified});
-    }
-    else
-    {
-        work.setLastModified(::getNow());
-    }
+    work.setLastModified(std::chrono::microseconds {lastModified});
     if (station.has_description())
     {
         work.setDescription(station.description());
@@ -307,15 +235,11 @@ void Station::setLastModified(
     const std::chrono::microseconds &lastModified) noexcept
 {
     pImpl->mLastModified = lastModified;
-    pImpl->mHasLastModified = true;
 }
 
-std::optional<std::chrono::microseconds> 
-Station::getLastModified() const noexcept
+std::chrono::microseconds Station::getLastModified() const noexcept
 {
-    return pImpl->mHasLastModified ?
-           std::optional<std::chrono::microseconds> (pImpl->mLastModified) :
-           std::nullopt;
+    return pImpl->mLastModified;
 }
 
 [[nodiscard]] UMetadata::GRPC::Station Station::toProtobuf() const
@@ -329,15 +253,7 @@ Station::getLastModified() const noexcept
     auto [startTime, endTime] = getStartAndEndTime();
     result.set_start_time(startTime.count());
     result.set_end_time(endTime.count());
-    auto lastModified = getLastModified();
-    if (lastModified)
-    {
-        result.set_last_modified_mus(lastModified->count());
-    }
-    else
-    {
-        result.set_last_modified_mus(::getNow().count());
-    }
+    result.set_last_modified_mus(getLastModified().count());
     auto description = getDescription();
     if (description){*result.mutable_description() = *description;}
     return result;
