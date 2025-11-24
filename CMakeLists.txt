@@ -42,7 +42,7 @@ endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/uMetadata/version.hpp)
-set(LIBRARY_SRC proto/station.proto proto/channel.proto
+set(LIBRARY_SRC proto/station.proto proto/channel.proto proto/telemetry.proto
     src/version.cpp
     src/client.cpp
     src/station.cpp
