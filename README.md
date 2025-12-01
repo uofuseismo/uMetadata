@@ -1,13 +1,3 @@
-# Prerequisite
-
-You need to get the proto files before compiling the software.
-
-    git subtree add --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
-
-Additionally, you should update the proto files
-
-    git subtree pull --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
-
 # Query Examples
 
 The following examples assume the server is running non-secured on your host
@@ -26,4 +16,14 @@ active stations from the server
 To get the data for an individual station, say UU.CTU,
 
     grpcurl -d '{"network" : "UU", "name": "CTU"}' --plaintext --proto /path/to/proto/station.proto localhost:50000 UMetadata.GRPC.Information.GetActiveStation
+
+# Prerequisite
+
+You need to get the proto files before compiling the software.
+
+    git subtree add --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
+
+Additionally, you should update the proto files
+
+    git subtree pull --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
 
