@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package UMetadata.GRPC;
+package UMetadata.GRPC.V1;
 
 // The service that returns station information.
 service Information

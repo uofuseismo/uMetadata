@@ -1,7 +1,7 @@
 syntax = "proto3";
 import "proto/v1/station.proto";
 
-package UMetadata.GRPC;
+package UMetadata.GRPC.V1;
 
 /// A node in a telemetry graph can be a station or a relay.
 message RelayNode

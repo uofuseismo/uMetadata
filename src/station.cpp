@@ -5,7 +5,7 @@
 #endif
 #include "uMetadata/station.hpp"
 #include "utilities.hpp"
-#include "proto/station.pb.h"
+#include "proto/v1/station.pb.h"
 
 using namespace UMetadata;
 
@@ -47,7 +47,7 @@ Station::Station(Station &&station) noexcept
 }
 
 /// Create from a protobuf
-Station::Station(const UMetadata::GRPC::Station &station) :
+Station::Station(const UMetadata::GRPC::V1::Station &station) :
     pImpl(std::make_unique<StationImpl> ())
 {
     Station work;
@@ -242,9 +242,9 @@ std::chrono::microseconds Station::getLastModified() const noexcept
     return pImpl->mLastModified;
 }
 
-[[nodiscard]] UMetadata::GRPC::Station Station::toProtobuf() const
+[[nodiscard]] UMetadata::GRPC::V1::Station Station::toProtobuf() const
 {
-    UMetadata::GRPC::Station result;
+    UMetadata::GRPC::V1::Station result;
     *result.mutable_network() = getNetwork();
     *result.mutable_name() = getName();
     result.set_latitude(getLatitude());

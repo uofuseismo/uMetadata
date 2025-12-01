@@ -3,7 +3,7 @@
 #include <chrono>
 #include <limits>
 #include "uMetadata/station.hpp"
-#include "proto/station.pb.h"
+#include "proto/v1/station.pb.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -68,7 +68,7 @@ TEST_CASE("UMetadata::Station", "[station]")
 
     SECTION("From Protobuf")
     {
-        UMetadata::GRPC::Station proto;
+        UMetadata::GRPC::V1::Station proto;
         proto.set_network(network);
         proto.set_name(name);
         proto.set_description(description);

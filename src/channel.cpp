@@ -1,7 +1,7 @@
 #include <string>
 #include <chrono>
 #include "uMetadata/channel.hpp"
-#include "proto/channel.pb.h"
+#include "proto/v1/channel.pb.h"
 #include "utilities.hpp"
 
 using namespace UMetadata;
@@ -50,7 +50,7 @@ Channel::Channel(Channel &&channel) noexcept
 }
 
 /// Create from a protobuf
-Channel::Channel(const UMetadata::GRPC::Channel &channel) :
+Channel::Channel(const UMetadata::GRPC::V1::Channel &channel) :
     pImpl(std::make_unique<ChannelImpl> ())
 {
     Channel work;
@@ -355,9 +355,9 @@ std::chrono::microseconds Channel::getLastModified() const noexcept
 /// Destructor
 Channel::~Channel() = default;
 
-[[nodiscard]] UMetadata::GRPC::Channel Channel::toProtobuf() const
+[[nodiscard]] UMetadata::GRPC::V1::Channel Channel::toProtobuf() const
 {
-    UMetadata::GRPC::Channel result;
+    UMetadata::GRPC::V1::Channel result;
     *result.mutable_network() = getNetwork();
     *result.mutable_station() = getStation();
     *result.mutable_name() = getName();

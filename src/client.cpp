@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 #include "uMetadata/client.hpp"
 #include "uMetadata/station.hpp"
-#include "proto/station.grpc.pb.h"
+#include "proto/v1/station.grpc.pb.h"
 
 using namespace UMetadata;
 
@@ -26,16 +26,16 @@ public:
         std::shared_ptr<grpc::Channel> channel
             = grpc::CreateChannel(endPoint,
                                   grpc::InsecureChannelCredentials());
-        mStub = std::make_unique<UMetadata::GRPC::Information::Stub> (channel); 
+        mStub = std::make_unique<UMetadata::GRPC::V1::Information::Stub> (channel); 
     }
     // Get all the stations
     [[nodiscard]] std::vector<UMetadata::Station> getAllActiveStations() const
     {
         spdlog::debug("Querying for all active stations");
         std::vector<UMetadata::Station> result;
-        UMetadata::GRPC::AllActiveStationsRequest request;
+        UMetadata::GRPC::V1::AllActiveStationsRequest request;
         grpc::ClientContext context;
-        UMetadata::GRPC::StationsResponse response;
+        UMetadata::GRPC::V1::StationsResponse response;
 
         std::mutex mutex;
         std::condition_variable cv;
@@ -78,7 +78,7 @@ public:
             throw std::runtime_error(error);
         }
     }
-    std::unique_ptr<UMetadata::GRPC::Information::Stub> mStub{nullptr};
+    std::unique_ptr<UMetadata::GRPC::V1::Information::Stub> mStub{nullptr};
 };
 
 /// Constructor
