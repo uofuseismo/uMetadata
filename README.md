@@ -1,3 +1,12 @@
+# Prerequisite
+
+You need to get the proto files before compiling the software.
+
+    git subtree add --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
+
+Additionally, you should update the proto files
+
+    git subtree pull --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
 
 # Query Examples
 
