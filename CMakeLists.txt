@@ -46,6 +46,8 @@ set(LIBRARY_SRC
     proto/v1/station.proto
     proto/v1/channel.proto
     proto/v1/station_information_service.proto
+    proto/v1/all_active_stations_request.proto
+    proto/v1/active_station_request.proto
     proto/v1/stations_response.proto
     # proto/v1/telemetry.proto
     src/version.cpp
