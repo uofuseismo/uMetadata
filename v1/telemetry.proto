@@ -14,17 +14,17 @@ message RelayNode
 /// Defines the nature of communication between two nodes.
 enum Link
 {
-    Unknown = 0; /// It's unknown how the data moves along the graph edge.
-    IP = 1;      /// Data over internet protocol (IP).
-    Radio = 2;   /// Data moves via radio link.
-    Cell = 3;    /// Data moves via cell model.
+    LINK_UNKNOWN = 0; /// It's unknown how the data moves along the graph edge.
+    LINK_IP = 1;      /// Data over internet protocol (IP).
+    LINK_RADIO = 2;   /// Data moves via radio link.
+    LINK_CELL = 3;    /// Data moves via cell model.
 }   
 
 message StationRelayNodeEdge
 {
     int32 station_index = 1;    /// The index of the station in the graph.  This is C-based numbering.
     int32 relay_node_index = 2; /// The index of the relay node in the graph.  This is C-based numbering.
-    optional Link link = 3;   /// The mechanism by which the station sends data to the realy.
+    Link link = 3 [default = Link::LINK_UNKNOKWN];   /// The mechanism by which the station sends data to the realy.
 }
 
 message Graph
