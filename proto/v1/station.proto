@@ -1,4 +1,5 @@
 edition = "2023";
+import "google/protobuf/latlng.proto";
 import "google/protobuf/timestamp.proto";
 
 package UMetadata.V1;
@@ -12,19 +13,18 @@ message Station
     string network = 1;
     // The station name - e.g., CTU.
     string name = 2;
-    // The station latitude in degrees.  This will be in the range [90, 90].
-    double latitude = 3;
-    // The station longitude in degrees.  This will be in the range [-180, 180). 
-    double longitude = 4;
+    // The station's latitude and longitude in degrees.  The latitude will be in the 
+    // range [-90, 90] and the longitude in the rnage [-180, 180).
+    google.protobuf.Timestamp latitude_and_longitude = 3;
     // The station's elevation in meters above sea-level.  This will be in the range
     // [-10,000, 8600] meters.
-    double elevation = 5;
+    double elevation = 4;
     // The UTC time when the station was opened.
-    google.protobuf.Timestamp start_time = 6;
+    google.protobuf.Timestamp start_time = 5;
     // The UTC time when the station was closed.
-    google.protobuf.Timestamp end_time = 7;
+    google.protobuf.Timestamp end_time = 6;
     // The UTC time was this station's information was last updated.
-    google.protobuf.Timestamp last_modified = 8;
+    google.protobuf.Timestamp last_modified = 7;
     // The station description - e.g., Camp Tracy, Utah.
-    string description = 9 [default = ""];
+    string description = 8 [default = ""];
 };
