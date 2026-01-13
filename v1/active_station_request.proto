@@ -1,0 +1,14 @@
+edition = "2023";
+
+package UMetadata.V1;
+
+/*!
+ * Requests information for an active (currently running) station.
+ */
+message ActiveStationRequest
+{
+    // The network code - e.g., UU.
+    string network = 1;
+    // The station name - e.g., CTU.
+    string name = 2;
+}
