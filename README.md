@@ -21,9 +21,9 @@ To get the data for an individual station, say UU.CTU,
 
 You need to get the proto files before compiling the software.
 
-    git subtree add --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
+    git subtree add --prefix uMetadataAPI https://github.com/uofuseismo/uMetadataAPI.git main --squash
 
 Additionally, you should update the proto files
 
-    git subtree pull --prefix proto https://github.com/uofuseismo/uMetadataAPI.git main --squash
+    git subtree pull --prefix uMetadataAPI https://github.com/uofuseismo/uMetadataAPI.git main --squash
 
