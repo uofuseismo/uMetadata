@@ -26,5 +26,5 @@ message Station
     // The UTC time was this station's information was last updated.
     google.protobuf.Timestamp last_modified = 8;
     // The station description - e.g., Camp Tracy, Utah.
-    optional string description = 9;
+    string description = 9 [default = ""];
 };
