@@ -9,6 +9,7 @@
 #include <spdlog/spdlog.h>
 #include "uMetadata/client.hpp"
 #include "uMetadata/station.hpp"
+#include "proto/v1/
 #include "proto/v1/station.grpc.pb.h"
 
 using namespace UMetadata;
@@ -78,7 +79,7 @@ public:
             throw std::runtime_error(error);
         }
     }
-    std::unique_ptr<UMetadata::GRPC::V1::Information::Stub> mStub{nullptr};
+    std::unique_ptr<UMetadata::V1::StationInformation::Stub> mStub{nullptr};
 };
 
 /// Constructor
