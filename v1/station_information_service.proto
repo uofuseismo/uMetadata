@@ -3,6 +3,7 @@ edition = "2023";
 package UMetadata.V1;
 
 import "proto/v1/all_active_stations_request.proto";
+import "proto/v1/active_station_request.proto";
 import "proto/v1/stations_response.proto";
 import "proto/v1/station.proto";
 
