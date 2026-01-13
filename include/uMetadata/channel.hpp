@@ -4,7 +4,7 @@
 #include <chrono>
 #include <optional>
 
-namespace UMetadata::GRPC::V1
+namespace UMetadata::V1
 {
   class Channel;
 }
@@ -29,7 +29,7 @@ public:
     Channel(Channel &&channel) noexcept;
     /// @brief Constructs from a protobuf.
     /// @param[in] channel  The channel representation as a protobuf.
-    explicit Channel(const UMetadata::GRPC::V1::Channel &channel);
+    explicit Channel(const UMetadata::V1::Channel &channel);
 
     /// @name Required Properties
     /// @{
@@ -162,7 +162,7 @@ public:
 
     /// @result The channel expressed as a protobuf for gRPC communication.
     /// @throws std::runtime_error if any of the required values are not set.
-    [[nodiscard]] UMetadata::GRPC::V1::Channel toProtobuf() const;
+    [[nodiscard]] UMetadata::V1::Channel toProtobuf() const;
 
     /// @brief Copy assignment.
     /// @param[in] channel  The channel to copy to this.

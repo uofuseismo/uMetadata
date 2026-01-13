@@ -1,5 +1,6 @@
 #include <string>
 #include <chrono>
+#include <google/protobuf/util/time_util.h>
 #include "uMetadata/channel.hpp"
 #include "proto/v1/channel.pb.h"
 #include "utilities.hpp"
@@ -50,7 +51,7 @@ Channel::Channel(Channel &&channel) noexcept
 }
 
 /// Create from a protobuf
-Channel::Channel(const UMetadata::GRPC::V1::Channel &channel) :
+Channel::Channel(const UMetadata::V1::Channel &channel) :
     pImpl(std::make_unique<ChannelImpl> ())
 {
     Channel work;
@@ -58,8 +59,9 @@ Channel::Channel(const UMetadata::GRPC::V1::Channel &channel) :
     work.setStation(channel.station());
     work.setName(channel.name());
     work.setLocationCode(channel.location_code());
-    auto startTime = std::chrono::seconds {channel.start_time()};
-    auto endTime = std::chrono::seconds {channel.end_time()};
+
+    auto startTime = std::chrono::seconds {channel.start_time().seconds()};
+    auto endTime = std::chrono::seconds {channel.end_time().seconds()};
     work.setStartAndEndTime(std::pair {startTime, endTime});
     work.setLongitude(channel.longitude());
     work.setLatitude(channel.latitude()); 
@@ -67,8 +69,13 @@ Channel::Channel(const UMetadata::GRPC::V1::Channel &channel) :
     work.setSamplingRate(channel.sampling_rate());
     work.setAzimuth(channel.azimuth());
     work.setDip(channel.dip());
-    auto lastModified = channel.last_modified_mus();
-    work.setLastModified(std::chrono::microseconds {lastModified});
+    auto lastModifiedMuS
+         = static_cast<int64_t> (
+              std::round(
+                  channel.last_modified().seconds()
+                + channel.last_modified().nanos()*1.e-9)
+           )*1000000;
+    work.setLastModified(std::chrono::microseconds {lastModifiedMuS});
     *this = std::move(work);
 }
 
@@ -355,9 +362,9 @@ std::chrono::microseconds Channel::getLastModified() const noexcept
 /// Destructor
 Channel::~Channel() = default;
 
-[[nodiscard]] UMetadata::GRPC::V1::Channel Channel::toProtobuf() const
+[[nodiscard]] UMetadata::V1::Channel Channel::toProtobuf() const
 {
-    UMetadata::GRPC::V1::Channel result;
+    UMetadata::V1::Channel result;
     *result.mutable_network() = getNetwork();
     *result.mutable_station() = getStation();
     *result.mutable_name() = getName();
@@ -369,9 +376,18 @@ Channel::~Channel() = default;
     result.set_azimuth(getAzimuth());
     result.set_dip(getDip());
     auto [startTime, endTime] = getStartAndEndTime();
-    result.set_start_time(startTime.count());
-    result.set_end_time(endTime.count());
-    result.set_last_modified_mus(getLastModified().count());
+    auto startTimeProtobuf
+        = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+             startTime.count());
+    auto endTimeProtobuf
+         = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+             endTime.count());
+    *result.mutable_start_time() = std::move(startTimeProtobuf);
+    *result.mutable_end_time() = std::move(endTimeProtobuf);
+    auto lastModifiedProtobuf
+        = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
+            getLastModified().count());
+    *result.mutable_last_modified() = std::move(lastModifiedProtobuf);
     return result;
 }
 

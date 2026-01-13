@@ -15,8 +15,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include "uMetadata/station.hpp"
 #include "uMetadata/database.hpp"
-#include "proto/v1/station.pb.h"
-#include "proto/v1/station.grpc.pb.h"
+#include "proto/v1/station_information_service.grpc.pb.h"
 
 #include "data/utah.hpp"
 #include "data/ynp.hpp"
@@ -48,7 +47,7 @@ void setVerbosityForSPDLOG(int verbosity);
 }
 
 class StationInformationServiceImpl final :
-    public UMetadata::GRPC::V1::Information::CallbackService
+    public UMetadata::V1::StationInformation::CallbackService
 {
 public:
     explicit StationInformationServiceImpl(const ::ProgramOptions &options)
@@ -69,15 +68,15 @@ public:
     }
     grpc::ServerUnaryReactor*
         GetAllActiveStations(grpc::CallbackServerContext *context,
-                             const UMetadata::GRPC::V1::AllActiveStationsRequest *request,
-                             UMetadata::GRPC::V1::StationsResponse *response) override
+                             const UMetadata::V1::AllActiveStationsRequest *request,
+                             UMetadata::V1::StationsResponse *response) override
     {
         class Reactor : public grpc::ServerUnaryReactor 
         {
         public:
             Reactor(const UMetadata::Database &mDatabaseHandle,
-                    const UMetadata::GRPC::V1::AllActiveStationsRequest &request,
-                    UMetadata::GRPC::V1::StationsResponse *response)
+                    const UMetadata::V1::AllActiveStationsRequest &request,
+                    UMetadata::V1::StationsResponse *response)
             {
                 try
                 {
@@ -114,8 +113,8 @@ public:
     }
     grpc::ServerUnaryReactor*
         GetActiveStation(grpc::CallbackServerContext *context,
-                         const UMetadata::GRPC::V1::ActiveStationRequest *request,
-                         UMetadata::GRPC::V1::Station *response) override
+                         const UMetadata::V1::ActiveStationRequest *request,
+                         UMetadata::V1::Station *response) override
     {   
         // Get the active stations
         auto network = request->network();

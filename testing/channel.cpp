@@ -2,6 +2,7 @@
 #include <string>
 #include <chrono>
 #include <limits>
+#include <google/protobuf/util/time_util.h>
 #include "uMetadata/channel.hpp"
 #include "proto/v1/channel.pb.h"
 #include <catch2/catch_test_macros.hpp>
@@ -80,16 +81,19 @@ TEST_CASE("UMetadata::Channel", "[channel]")
                      Catch::Matchers::WithinAbs(azimuth, 1.e-10));
         REQUIRE_THAT(proto.dip(),
                      Catch::Matchers::WithinAbs(dip, 1.e-10));
-        REQUIRE(proto.start_time() == startTime.count());
-        REQUIRE(proto.end_time() == endTime.count());
-        REQUIRE(proto.last_modified_mus() ==
-                std::chrono::microseconds {lastModified}.count());
+        REQUIRE(proto.start_time().seconds() == startTime.count());
+        REQUIRE(proto.end_time().seconds() == endTime.count());
+        auto protoLastModified
+            = proto.last_modified().seconds()*1000000000
+            + proto.last_modified().nanos();
+        REQUIRE(protoLastModified ==
+                std::chrono::nanoseconds {lastModified}.count());
 
     }   
 
     SECTION("From Protobuf")
     {   
-        UMetadata::GRPC::V1::Channel proto;
+        UMetadata::V1::Channel proto;
         proto.set_network("uu");
         proto.set_station(station);
         proto.set_name(name);
@@ -100,10 +104,19 @@ TEST_CASE("UMetadata::Channel", "[channel]")
         proto.set_sampling_rate(samplingRate);
         proto.set_azimuth(azimuth);
         proto.set_dip(dip);
-        proto.set_start_time(startTime.count());
-        proto.set_end_time(endTime.count());
-        proto.set_last_modified_mus(
-            std::chrono::microseconds {lastModified}.count());
+        auto startTimeProtobuf
+            = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+                 startTime.count());
+        auto endTimeProtobuf
+            = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+                 endTime.count());
+
+        *proto.mutable_start_time() = std::move(startTimeProtobuf);
+        *proto.mutable_end_time() = std::move(endTimeProtobuf);
+        auto lastModifiedProtobuf
+            = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
+                 lastModified.count()*1000000);
+        *proto.mutable_last_modified() = std::move(lastModifiedProtobuf);
 
         UMetadata::Channel cproto{proto};
         REQUIRE(cproto.getNetwork() == network);

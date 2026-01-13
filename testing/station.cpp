@@ -2,6 +2,7 @@
 #include <string>
 #include <chrono>
 #include <limits>
+#include <google/protobuf/util/time_util.h>
 #include "uMetadata/station.hpp"
 #include "proto/v1/station.pb.h"
 #include <catch2/catch_test_macros.hpp>
@@ -59,26 +60,39 @@ TEST_CASE("UMetadata::Station", "[station]")
                      Catch::Matchers::WithinAbs(longitude, 1.e-10));
         REQUIRE_THAT(proto.elevation(),
                      Catch::Matchers::WithinAbs(elevation, 1.e-10));
-        REQUIRE(proto.start_time() == startTime.count());
-        REQUIRE(proto.end_time() == endTime.count());
-        REQUIRE(proto.last_modified_mus() ==
-                std::chrono::microseconds {lastModified}.count());
+        REQUIRE(proto.start_time().seconds() == startTime.count());
+        REQUIRE(proto.end_time().seconds() == endTime.count());
+        auto protoLastModified
+            = proto.last_modified().seconds()*1000000000
+            + proto.last_modified().nanos();
+        REQUIRE(protoLastModified
+                == std::chrono::nanoseconds {lastModified}.count());
 
     }
 
     SECTION("From Protobuf")
     {
-        UMetadata::GRPC::V1::Station proto;
+        UMetadata::V1::Station proto;
         proto.set_network(network);
         proto.set_name(name);
         proto.set_description(description);
         proto.set_latitude(latitude);
         proto.set_longitude(longitude + 360);
         proto.set_elevation(elevation);
-        proto.set_start_time(startTime.count());
-        proto.set_end_time(endTime.count());
-        proto.set_last_modified_mus(
-            std::chrono::microseconds {lastModified}.count());
+
+        auto startTimeProtobuf
+            = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+                 startTime.count());
+        auto endTimeProtobuf
+            = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+                 endTime.count());
+
+        *proto.mutable_start_time() = std::move(startTimeProtobuf);
+        *proto.mutable_end_time() = std::move(endTimeProtobuf);
+        auto lastModifiedProtobuf
+            = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
+                 lastModified.count()*1000000);
+        *proto.mutable_last_modified() = std::move(lastModifiedProtobuf);
 
         UMetadata::Station sproto{proto};
         REQUIRE(sproto.getNetwork() == network);

@@ -3,6 +3,7 @@
 #ifndef NDEBUG
 #include <cassert>
 #endif
+#include <google/protobuf/util/time_util.h>
 #include "uMetadata/station.hpp"
 #include "utilities.hpp"
 #include "proto/v1/station.pb.h"
@@ -47,20 +48,26 @@ Station::Station(Station &&station) noexcept
 }
 
 /// Create from a protobuf
-Station::Station(const UMetadata::GRPC::V1::Station &station) :
+Station::Station(const UMetadata::V1::Station &station) :
     pImpl(std::make_unique<StationImpl> ())
 {
     Station work;
     work.setNetwork(station.network());
     work.setName(station.name());
-    auto startTime = std::chrono::seconds {station.start_time()};
-    auto endTime = std::chrono::seconds {station.end_time()};
+    
+    auto startTime = std::chrono::seconds {station.start_time().seconds()};
+    auto endTime = std::chrono::seconds {station.end_time().seconds()};
     work.setStartAndEndTime(std::pair {startTime, endTime});
     work.setLongitude(station.longitude());
     work.setLatitude(station.latitude()); 
     work.setElevation(station.elevation());
-    auto lastModified = station.last_modified_mus();
-    work.setLastModified(std::chrono::microseconds {lastModified});
+    auto lastModifiedMuS
+         = static_cast<int64_t> (
+              std::round(
+                  station.last_modified().seconds()
+                + station.last_modified().nanos()*1.e-9)
+           )*1000000;
+    work.setLastModified(std::chrono::microseconds {lastModifiedMuS});
     if (station.has_description())
     {
         work.setDescription(station.description());
@@ -242,18 +249,27 @@ std::chrono::microseconds Station::getLastModified() const noexcept
     return pImpl->mLastModified;
 }
 
-[[nodiscard]] UMetadata::GRPC::V1::Station Station::toProtobuf() const
+[[nodiscard]] UMetadata::V1::Station Station::toProtobuf() const
 {
-    UMetadata::GRPC::V1::Station result;
+    UMetadata::V1::Station result;
     *result.mutable_network() = getNetwork();
     *result.mutable_name() = getName();
     result.set_latitude(getLatitude());
     result.set_longitude(getLongitude());
     result.set_elevation(getElevation());
     auto [startTime, endTime] = getStartAndEndTime();
-    result.set_start_time(startTime.count());
-    result.set_end_time(endTime.count());
-    result.set_last_modified_mus(getLastModified().count());
+    auto startTimeProtobuf
+        = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+             startTime.count());
+    auto endTimeProtobuf
+         = google::protobuf::util::TimeUtil::SecondsToTimestamp(
+             endTime.count());
+    *result.mutable_start_time() = std::move(startTimeProtobuf);
+    *result.mutable_end_time() = std::move(endTimeProtobuf);
+    auto lastModifiedProtobuf
+        = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
+            getLastModified().count());
+    *result.mutable_last_modified() = std::move(lastModifiedProtobuf);
     auto description = getDescription();
     if (description){*result.mutable_description() = *description;}
     return result;
