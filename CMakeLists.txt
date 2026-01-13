@@ -9,6 +9,10 @@ option(ENABLE_CODE_ANALYSIS "Run the cppcheck static analysis tool" OFF)
 include(GenerateExportHeader)
 include(FetchContent)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(Boost_USE_STATIC_LIBS ON)
 if (NOT ${BUILD_SHARED_LIBS})
@@ -43,13 +47,13 @@ endif()
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/uMetadata/version.hpp)
 set(LIBRARY_SRC
-    proto/v1/station.proto
-    proto/v1/channel.proto
-    proto/v1/station_information_service.proto
-    proto/v1/all_active_stations_request.proto
-    proto/v1/active_station_request.proto
-    proto/v1/stations_response.proto
-    # proto/v1/telemetry.proto
+    uMetadataAPI/v1/station.proto
+    uMetadataAPI/v1/channel.proto
+    uMetadataAPI/v1/station_information_service.proto
+    uMetadataAPI/v1/all_active_stations_request.proto
+    uMetadataAPI/v1/active_station_request.proto
+    uMetadataAPI/v1/stations_response.proto
+    #uMetadataAPI/v1/telemetry.proto
     src/version.cpp
     src/client.cpp
     src/station.cpp
