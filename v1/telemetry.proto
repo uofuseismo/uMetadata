@@ -24,7 +24,7 @@ message StationRelayNodeEdge
 {
     int32 station_index = 1;    /// The index of the station in the graph.  This is C-based numbering.
     int32 relay_node_index = 2; /// The index of the relay node in the graph.  This is C-based numbering.
-    Link link = 3 [default = Link::LINK_UNKNOKWN];   /// The mechanism by which the station sends data to the realy.
+    Link link = 3 [default = LINK_UNKNOWN];   /// The mechanism by which the station sends data to the realy.
 }
 
 message Graph
