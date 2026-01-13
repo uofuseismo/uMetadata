@@ -1,0 +1,19 @@
+edition = "2023";
+
+package UMetadataAPI.V1;
+
+import "uMetadataAPI/v1/all_active_stations_request.proto";
+import "uMetadatAPI/v1/active_station_request.proto";
+import "uMetadataAPI/v1/stations_response.proto";
+import "uMetadataAPI/v1/station.proto";
+
+// The service that returns station information.
+service StationInformation
+{
+    // Gets the currently running stations in the network.
+    rpc GetAllActiveStations(AllActiveStationsRequest) returns(StationsResponse) {};
+    // Gets the information corresponding to the currently running station.
+    rpc GetActiveStation(ActiveStationRequest) returns(Station) {};
+    /// Gets all stations in the network.
+    //rpc GetAllStations(AllStationsRequest) returns(StationInformationResponse) {};
+}

@@ -1,0 +1,10 @@
+edition = "2023";
+
+package UMetadataAPI.V1;
+
+/*!
+ * Requests the currently active (running) stations.
+ */
+message AllActiveStationsRequest
+{
+}
