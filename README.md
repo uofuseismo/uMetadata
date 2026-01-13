@@ -6,16 +6,16 @@ machine on port 50000.  Additionally, you must have
 
 To list all services
 
-    grpcurl --plaintext --proto /path/to/proto/station.proto localhost:50000 list
+    grpcurl --plaintext --proto /path/to/proto/station_information_service.proto localhost:50000 list
 
 Assuming the station proto file exists in /path/to/station.proto you can fetch all
 active stations from the server
  
-    grpcurl --plaintext --proto /path/to/proto/station.proto localhost:50000 UMetadata.GRPC.Information.GetAllActiveStations
+    grpcurl --plaintext --proto /path/to/proto/station_information_service.proto localhost:50000 UMetadata.V1.StationInformation.GetAllActiveStations
 
 To get the data for an individual station, say UU.CTU,
 
-    grpcurl -d '{"network" : "UU", "name": "CTU"}' --plaintext --proto /path/to/proto/station.proto localhost:50000 UMetadata.GRPC.Information.GetActiveStation
+    grpcurl -d '{"network" : "UU", "name": "CTU"}' --plaintext --proto /path/to/proto/station_information_service.proto localhost:50000 UMetadata.V1.StationInformation.GetActiveStation
 
 # Prerequisite
 
