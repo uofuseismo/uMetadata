@@ -4,7 +4,7 @@
 #include <limits>
 #include <google/protobuf/util/time_util.h>
 #include "uMetadata/channel.hpp"
-#include "proto/v1/channel.pb.h"
+#include "uMetadataAPI/v1/channel.pb.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -93,7 +93,7 @@ TEST_CASE("UMetadata::Channel", "[channel]")
 
     SECTION("From Protobuf")
     {   
-        UMetadata::V1::Channel proto;
+        UMetadataAPI::V1::Channel proto;
         proto.set_network("uu");
         proto.set_station(station);
         proto.set_name(name);

@@ -4,7 +4,7 @@
 #include <limits>
 #include <google/protobuf/util/time_util.h>
 #include "uMetadata/station.hpp"
-#include "proto/v1/station.pb.h"
+#include "uMetadataAPI/v1/station.pb.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -72,7 +72,7 @@ TEST_CASE("UMetadata::Station", "[station]")
 
     SECTION("From Protobuf")
     {
-        UMetadata::V1::Station proto;
+        UMetadataAPI::V1::Station proto;
         proto.set_network(network);
         proto.set_name(name);
         proto.set_description(description);

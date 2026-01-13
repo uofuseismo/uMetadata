@@ -4,7 +4,7 @@
 #include <chrono>
 #include <optional>
 
-namespace UMetadata::V1
+namespace UMetadataAPI::V1
 {
   class Station;
 }
@@ -29,7 +29,7 @@ public:
     Station(Station &&station) noexcept;
     /// @brief Constructs from a protobuf.
     /// @param[in] station  The station representation as a protobuf.
-    explicit Station(const UMetadata::V1::Station &station);
+    explicit Station(const UMetadataAPI::V1::Station &station);
 
     /// @name Required Properties
     /// @{
@@ -116,7 +116,7 @@ public:
 
     /// @result The station expressed as a protobuf for gRPC communication.
     /// @throws std::runtime_error if any of the required values are not set.
-    [[nodiscard]] UMetadata::V1::Station toProtobuf() const;
+    [[nodiscard]] UMetadataAPI::V1::Station toProtobuf() const;
 
     /// @brief Copy assignment.
     /// @param[in] station  The station to copy to this.

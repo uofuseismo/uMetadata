@@ -6,7 +6,7 @@
 #include <google/protobuf/util/time_util.h>
 #include "uMetadata/station.hpp"
 #include "utilities.hpp"
-#include "proto/v1/station.pb.h"
+#include "uMetadataAPI/v1/station.pb.h"
 
 using namespace UMetadata;
 
@@ -48,7 +48,7 @@ Station::Station(Station &&station) noexcept
 }
 
 /// Create from a protobuf
-Station::Station(const UMetadata::V1::Station &station) :
+Station::Station(const UMetadataAPI::V1::Station &station) :
     pImpl(std::make_unique<StationImpl> ())
 {
     Station work;
@@ -249,9 +249,9 @@ std::chrono::microseconds Station::getLastModified() const noexcept
     return pImpl->mLastModified;
 }
 
-[[nodiscard]] UMetadata::V1::Station Station::toProtobuf() const
+[[nodiscard]] UMetadataAPI::V1::Station Station::toProtobuf() const
 {
-    UMetadata::V1::Station result;
+    UMetadataAPI::V1::Station result;
     *result.mutable_network() = getNetwork();
     *result.mutable_name() = getName();
     result.set_latitude(getLatitude());

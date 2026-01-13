@@ -2,7 +2,7 @@
 #include <chrono>
 #include <google/protobuf/util/time_util.h>
 #include "uMetadata/channel.hpp"
-#include "proto/v1/channel.pb.h"
+#include "uMetadataAPI/v1/channel.pb.h"
 #include "utilities.hpp"
 
 using namespace UMetadata;
@@ -51,7 +51,7 @@ Channel::Channel(Channel &&channel) noexcept
 }
 
 /// Create from a protobuf
-Channel::Channel(const UMetadata::V1::Channel &channel) :
+Channel::Channel(const UMetadataAPI::V1::Channel &channel) :
     pImpl(std::make_unique<ChannelImpl> ())
 {
     Channel work;
@@ -362,9 +362,9 @@ std::chrono::microseconds Channel::getLastModified() const noexcept
 /// Destructor
 Channel::~Channel() = default;
 
-[[nodiscard]] UMetadata::V1::Channel Channel::toProtobuf() const
+[[nodiscard]] UMetadataAPI::V1::Channel Channel::toProtobuf() const
 {
-    UMetadata::V1::Channel result;
+    UMetadataAPI::V1::Channel result;
     *result.mutable_network() = getNetwork();
     *result.mutable_station() = getStation();
     *result.mutable_name() = getName();
