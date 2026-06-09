@@ -1,8 +1,15 @@
 #include <iostream>
 #include <chrono>
-#include <string>
 #include <cmath>
+#include <cstdint>
+#include <exception>
 #include <filesystem>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #include <sqlite3.h>
 #include <spdlog/spdlog.h>
 #include "uMetadata/database.hpp"
@@ -20,7 +27,7 @@
         sqlite3_finalize(statement); \
         throw std::runtime_error("Failed to bind statement with " \
                                + std::to_string(returnCode)); \
-   } \
+    } \
 }
 
 #define SQLITE_CHECK_PREPARE(returnCode, statement) \
@@ -30,7 +37,7 @@
         sqlite3_finalize(statement); \
         throw std::runtime_error("Failed to prepare statement with " \
                                + std::to_string(returnCode)); \
-   } \
+    } \
 }
 
 #define SQLITE_CHECK_FINALIZE(returnCode) \
@@ -57,34 +64,33 @@ namespace
 [[nodiscard]] UMetadata::Station unpackStationRow(sqlite3_stmt *statement)
 {
      UMetadata::Station result;
-     std::string network{
+     const std::string network{
          reinterpret_cast<const char *> (sqlite3_column_text(statement, 0))};
      result.setNetwork(network);
 
-     std::string name{
+     const std::string name{
          reinterpret_cast<const char *> (sqlite3_column_text(statement, 1))};
      result.setName(name);
 
-     std::string description;
      auto descriptionResult = sqlite3_column_text(statement, 2);
      if (descriptionResult)
      {
-         std::string description{
+         const std::string description{
              reinterpret_cast<const char *> (descriptionResult)};
          result.setDescription(description);
      }
 
-     double latitude = sqlite3_column_double(statement, 3);
+     const double latitude = sqlite3_column_double(statement, 3);
      result.setLatitude(latitude);
 
-     double longitude = sqlite3_column_double(statement, 4);
+     const double longitude = sqlite3_column_double(statement, 4);
      result.setLongitude(longitude);
 
-     double elevation = sqlite3_column_double(statement, 5); 
+     const double elevation = sqlite3_column_double(statement, 5); 
      result.setElevation(elevation);
  
-     int64_t startTime = sqlite3_column_int64(statement, 6);
-     int64_t endTime = sqlite3_column_int64(statement, 7);
+     const int64_t startTime = sqlite3_column_int64(statement, 6);
+     const int64_t endTime = sqlite3_column_int64(statement, 7);
      result.setStartAndEndTime(
         std::pair { std::chrono::seconds {startTime}, 
                     std::chrono::seconds {endTime}    } );
@@ -240,13 +246,13 @@ SELECT COUNT(*) FROM station WHERE
         returnCode = sqlite3_bind_text(statement,
                                        1,
                                        network.data(),
-                                       network.size(),
+                                       static_cast<int> (network.size()),
                                        SQLITE_STATIC);
         SQLITE_CHECK_BIND(returnCode, statement);
         returnCode = sqlite3_bind_text(statement,
                                        2,
                                        name.data(),
-                                       name.size(),
+                                       static_cast<int> (name.size()),
                                        SQLITE_STATIC);
         returnCode = sqlite3_bind_int64(statement, 3, startTime);
         SQLITE_CHECK_BIND(returnCode, statement);
@@ -287,7 +293,7 @@ SELECT COUNT(*) FROM station WHERE
         returnCode = sqlite3_bind_text(statement,
                                        index,
                                        table.data(),
-                                       table.size(), 
+                                       static_cast<int> (table.size()), 
                                        SQLITE_STATIC);
         SQLITE_CHECK_BIND(returnCode, statement);
         returnCode = sqlite3_step(statement);
@@ -305,7 +311,6 @@ SELECT COUNT(*) FROM station WHERE
     } 
     void createTable(const std::string_view &schema)
     {
-        bool result{false};
         if (!mHaveReadWriteDatabase)
         {            
             throw std::runtime_error("database not initialized");
@@ -435,13 +440,13 @@ SELECT network, name, description, latitude, longitude, elevation, start_time, e
         returnCode = sqlite3_bind_text(statement,
                                        1,
                                        network.data(),
-                                       network.size(),
+                                       static_cast<int> (network.size()),
                                        SQLITE_STATIC);
         SQLITE_CHECK_BIND(returnCode, statement);
         returnCode = sqlite3_bind_text(statement,
                                        2,
                                        name.data(),
-                                       name.size(),
+                                       static_cast<int> (name.size()),
                                        SQLITE_STATIC);
         SQLITE_CHECK_BIND(returnCode, statement);
         UMetadata::Station station;
@@ -534,14 +539,15 @@ SELECT network, name, description, latitude, longitude, elevation, start_time, e
         auto network = station.getNetwork();
         auto name = station.getName();
         auto description = station.getDescription();
-        double latitude = station.getLatitude();
-        double longitude = station.getLongitude();
-        double elevation = station.getElevation();
+        const double latitude = station.getLatitude();
+        const double longitude = station.getLongitude();
+        const double elevation = station.getElevation();
         auto startAndEndTime = station.getStartAndEndTime();
         auto startTime = static_cast<sqlite3_int64> (startAndEndTime.first.count());
         auto endTime = static_cast<sqlite3_int64> (startAndEndTime.second.count());
-        double lastModified = ::getNow().count()*1.e-6;
-        lastModified = station.getLastModified().count()*1.e-6;
+        //double lastModified = ::getNow().count()*1.e-6;
+        auto lastModified
+             = static_cast<double> (station.getLastModified().count())*1.e-6;
 
         const std::string_view sql{
 R"""(
@@ -559,13 +565,13 @@ INSERT INTO station (network, name, latitude, longitude, elevation, start_time, 
         returnCode = sqlite3_bind_text(statement,
                                        1,
                                        network.data(),
-                                       network.size(),
+                                       static_cast<int> (network.size()),
                                        SQLITE_STATIC);
         SQLITE_CHECK_BIND(returnCode, statement);
         returnCode = sqlite3_bind_text(statement,
                                        2,
                                        name.data(),
-                                       name.size(),
+                                       static_cast<int> (name.size()),
                                        SQLITE_STATIC);
         SQLITE_CHECK_BIND(returnCode, statement);
         returnCode = sqlite3_bind_double(statement, 3, latitude);
@@ -585,7 +591,7 @@ INSERT INTO station (network, name, latitude, longitude, elevation, start_time, 
             returnCode = sqlite3_bind_text(statement,
                                            9,
                                            description->data(),
-                                           description->size(),
+                                           static_cast<int> (description->size()),
                                            SQLITE_STATIC);
             SQLITE_CHECK_BIND(returnCode, statement);
         }
