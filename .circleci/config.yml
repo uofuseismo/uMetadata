@@ -56,16 +56,16 @@ jobs:
             cpack -B /tmp/artifacts
             rm -rf /tmp/artifacts/_CPack_Packages
             # Later, we're going to build a container so we duplicate some effort
-            make uMetadata-deb
-            mv *-Linux.deb /tmp/workspace/
-            mv Dockerfile.deb /tmp/workspace/
+            make uMetadata-u24
+            mv *-Linux.u24 /tmp/workspace/
+            mv Dockerfile.u24 /tmp/workspace/
             ls /tmp/workspace/
       - store_artifacts:
           path: /tmp/artifacts
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
-            - Dockerfile.deb
+            - Dockerfile.u24
             - uMetadata-*
     # End steps
   # End compile job
@@ -82,11 +82,11 @@ jobs:
           command: |
             cd /tmp/workspace
             ls
-            # Figure out version from uMetadata-MAJOR.MINOR.PATCH-Linux.deb
-            debfile=$(ls *Linux.deb)
-            version=$(echo ${debfile} | sed 's/uMetadata-//g' | sed 's/-Linux.deb//g')
+            # Figure out version from uMetadata-MAJOR.MINOR.PATCH-Linux.u24
+            debfile=$(ls *Linux.u24)
+            version=$(echo ${debfile} | sed 's/uMetadata-//g' | sed 's/-Linux.u24//g')
             echo ${version}
-            docker build -t umetadata:latest -t umetadata:${version} -f ./Dockerfile.deb .
+            docker build -t umetadata:latest -t umetadata:${version} -f ./Dockerfile.u24 .
       - run:
           name: "Quay login"
           command: |

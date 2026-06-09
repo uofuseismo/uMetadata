@@ -3,7 +3,7 @@ project(uMetadata VERSION 0.0.2 LANGUAGES CXX)
 enable_testing()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON) 
-option(BUILD_CONTAINER "Build debian container for deployment" OFF)
+option(BUILD_CONTAINER "Build Ubuntu container for deployment" OFF)
 option(BUILD_TESTS "Compile regression tests" ON)
 option(WITH_CONAN "Build using Conan" OFF)
 option(USE_CLANG_TIDY "Build using clang-tidy" OFF)
@@ -223,20 +223,20 @@ install(FILES
 ##########################################################################################
 if (${BUILD_CONTAINER})
    include(CPackComponent)
-   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/Dockerfile.deb.in
-                  ${CMAKE_CURRENT_BINARY_DIR}/Dockerfile.deb @ONLY)
-   add_custom_target(${PROJECT_NAME}-deb
-                     COMMENT "Creating deb file for ${PROJECT_NAME}"
+   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/Dockerfile.u24.in
+                  ${CMAKE_CURRENT_BINARY_DIR}/Dockerfile.u24 @ONLY)
+   add_custom_target(${PROJECT_NAME}-u24
+                     COMMENT "Creating Dockerfile for ${PROJECT_NAME}"
                      COMMAND ${CMAKE_CPACK_COMMAND} -G DEB 
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM)
-   add_dependencies(${PROJECT_NAME}-deb uMetadataServer uMetadataUpdater)
+   add_dependencies(${PROJECT_NAME}-u24 uMetadataServer uMetadataUpdater)
    find_program(buildah_EXECUTABLE buildah)
    if (buildah_EXECUTABLE)
       add_custom_target(buildah
                         COMMENT "Preparing the container with buildah"
-                        COMMAND ${buildah_EXECUTABLE} bud -t umetadata:${PROJECT_VERSION} -t umetadata:latest -f ./Dockerfile.deb
+                        COMMAND ${buildah_EXECUTABLE} bud -t umetadata:${PROJECT_VERSION} -t umetadata:latest -f ./Dockerfile.u24
                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM)
-      add_dependencies(buildah ${PROJECT_NAME}-deb)
+      add_dependencies(buildah ${PROJECT_NAME}-u24)
    endif()
 endif()
 
