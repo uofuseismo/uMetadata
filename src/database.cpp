@@ -12,6 +12,7 @@
 #include <vector>
 #include <sqlite3.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
 #include "uMetadata/database.hpp"
 #include "uMetadata/station.hpp"
 #include "uMetadata/channel.hpp"
@@ -22,7 +23,7 @@
 
 #define SQLITE_CHECK_BIND(returnCode, statement) \
 { \
-    if (returnCode != SQLITE_OK) \
+    if ((returnCode) != SQLITE_OK) \
     { \
         sqlite3_finalize(statement); \
         throw std::runtime_error("Failed to bind statement with " \
@@ -32,7 +33,7 @@
 
 #define SQLITE_CHECK_PREPARE(returnCode, statement) \
 { \
-    if (returnCode != SQLITE_OK) \
+    if ((returnCode) != SQLITE_OK) \
     { \
         sqlite3_finalize(statement); \
         throw std::runtime_error("Failed to prepare statement with " \
@@ -42,7 +43,7 @@
 
 #define SQLITE_CHECK_FINALIZE(returnCode) \
 { \
-    if (returnCode != SQLITE_OK) \
+    if ((returnCode) != SQLITE_OK) \
     { \
         spdlog::warn("Failed to finalize create station table stmt"); \
     } \

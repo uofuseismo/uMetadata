@@ -1,9 +1,13 @@
+#include <iostream>
 #include <cmath>
+#include <exception>
 #include <fstream>
-#include <sstream>
 #include <limits>
-#include <thread>
+#include <memory>
 #include <mutex>
+#include <sstream>
+#include <stdexcept>
+#include <thread>
 #include <spdlog/spdlog.h>
 #include <sqlite3.h>
 #include <grpcpp/grpcpp.h>
@@ -13,6 +17,9 @@
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include "uMetadata/station.hpp"
 #include "uMetadata/database.hpp"
 #include "uMetadataAPI/v1/station_information_service.grpc.pb.h"
@@ -50,7 +57,10 @@ class StationInformationServiceImpl final :
     public UMetadataAPI::V1::StationInformation::CallbackService
 {
 public:
-    explicit StationInformationServiceImpl(const ::ProgramOptions &options)
+    explicit StationInformationServiceImpl(
+        const ::ProgramOptions &options,
+        std::shared_ptr<spdlog::logger> logger) :
+        mLogger(std::move(logger))
     {
         constexpr bool openReadOnly{true};
         try
@@ -76,8 +86,19 @@ public:
         public:
             Reactor(const UMetadata::Database &mDatabaseHandle,
                     const UMetadataAPI::V1::AllActiveStationsRequest &request,
-                    UMetadataAPI::V1::StationsResponse *response)
+                    UMetadataAPI::V1::StationsResponse *response,
+                    std::shared_ptr<spdlog::logger> logger) : 
+                mLogger(std::move(logger))
             {
+                if (mLogger && !request.identifier().empty())
+                {
+                    SPDLOG_LOGGER_DEBUG(mLogger,
+                       "Received GetAllActiveStations request from {}",
+                       request.identifier());
+                } 
+                const auto startTime
+                   = std::chrono::duration_cast<std::chrono::nanoseconds>
+                     ((std::chrono::high_resolution_clock::now()).time_since_epoch());
                 try
                 {
                     auto allStations = mDatabaseHandle.getAllActiveStations();
@@ -89,27 +110,44 @@ public:
                 }
                 catch (const std::exception &e)
                 {
-                    spdlog::error(
-                        "GetAllActiveStations request query failed with "
-                       + std::string{e.what()});
+                    if (mLogger)
+                    {
+                        SPDLOG_LOGGER_ERROR(mLogger,
+                            "GetAllActiveStations request query failed with ",
+                             std::string{e.what()});
+                    }
                     grpc::Status status{grpc::StatusCode::UNKNOWN,
                                         "Server-side query failed"};
                     Finish(status);
                 }
+                const auto endTime
+                    = std::chrono::duration_cast<std::chrono::nanoseconds>
+                      ((std::chrono::high_resolution_clock::now()).time_since_epoch());
+                const auto processTime
+                    = static_cast<double> ((endTime - startTime).count())*1.e-9;
                 Finish(grpc::Status::OK);
             }
         private:
             void OnDone() override
             {
-                spdlog::debug("GetAllActiveStations RPC completed");
+                if (mLogger)
+                {
+                    SPDLOG_LOGGER_DEBUG(mLogger,
+                                        "GetAllActiveStations RPC completed");
+                }
                 delete this;
             }
             void OnCancel() override
             {
-                spdlog::debug("GetAllActiveStations RPC canceled");
+                if (mLogger)
+                {
+                   SPDLOG_LOGGER_DEBUG(mLogger,
+                                       "GetAllActiveStations RPC canceled");
+                }
             }
+            std::shared_ptr<spdlog::logger> mLogger{nullptr};
         };
-        return new Reactor(*mDatabase, *request, response);
+        return new Reactor(*mDatabase, *request, response, mLogger);
     }
     grpc::ServerUnaryReactor*
         GetActiveStation(grpc::CallbackServerContext *context,
@@ -117,8 +155,8 @@ public:
                          UMetadataAPI::V1::Station *response) override
     {   
         // Get the active stations
-        auto network = request->network();
-        auto name = request->name();
+        const auto network = request->network();
+        const auto name = request->name();
         grpc::Status status{grpc::Status::OK};
         try
         {
@@ -155,18 +193,19 @@ public:
     {
         mHealthCheckService = healthCheckService;
     }
-
+    std::shared_ptr<spdlog::logger> mLogger{nullptr};
     mutable std::mutex mMutex;
     std::unique_ptr<UMetadata::Database> mDatabase{nullptr};
     grpc::HealthCheckServiceInterface *mHealthCheckService{nullptr};
 };
 
-void runServer(const ::ProgramOptions &options)
+void runServer(const ::ProgramOptions &options,
+               std::shared_ptr<spdlog::logger> logger)
 {
     auto serverAddress = options.grpcHost + ":"
                         + std::to_string(options.grpcPort);
 
-    StationInformationServiceImpl service{options};
+    StationInformationServiceImpl service{options, logger};
 
     grpc::EnableDefaultHealthCheckService(true);
     if (options.grpcEnableReflection)
@@ -229,7 +268,8 @@ int main(int argc, char *argv[])
         spdlog::error(e.what());
         return EXIT_FAILURE;
     }
-    ::setVerbosityForSPDLOG(programOptions.verbosity);
+auto logger = spdlog::stdout_color_mt("console");
+//    ::setVerbosityForSPDLOG(programOptions.verbosity);
 
 // kludge so i can test grpc in k8s
 try 
@@ -239,13 +279,13 @@ try
 
     if (programOptions.isUtah)
     {
-        spdlog::info("Making utah stations");
+        SPDLOG_LOGGER_INFO(logger, "Making utah stations");
         auto stations = ::createStationsUtah();
         database.insert(stations);
     }
     else
     {
-        spdlog::info("Making ynp stations");
+        SPDLOG_LOGGER_INFO(logger, "Making ynp stations");
         auto stations = ::createStationsYNP();
         database.insert(stations);
     }
@@ -253,18 +293,22 @@ try
 }   
 catch (const std::exception &e)
 {
-    spdlog::critical(e.what());
+    SPDLOG_LOGGER_CRITICAL(logger,
+                           "Failed to create database because {}",
+                           std::string(e.what()));
     return EXIT_FAILURE;
 }
 
 
     try
     {
-        runServer(programOptions);
+        runServer(programOptions, logger);
     }
     catch (const std::exception &e)
     {
-        spdlog::error("Server failed with " + std::string {e.what()});
+        SPDLOG_LOGGER_CRITICAL(logger,
+                               "Server failed with {}",
+                               std::string {e.what()});
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
@@ -297,7 +341,7 @@ Allowed options)""");
     boost::program_options::notify(vm);
     if (vm.count("help"))
     {    
-        std::cout << desc << std::endl;
+        std::cout << desc << std::endl; // NOLINT
         return {iniFile, true};
     }   
     if (vm.count("ini"))
