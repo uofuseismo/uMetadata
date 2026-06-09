@@ -1,0 +1,18 @@
+edition = "2023";
+
+package UMetadataAPI.V1;
+
+/*!
+ * Requests information for an active (currently running) channel.
+ */
+message ActiveChannelRequest
+{
+    // The network code - e.g., UU.
+    string network = 1;
+    // The station name - e.g., CTU.
+    string name = 2;
+    // The channel name.
+    string channel = 3;
+    // The location code - e.g., 01.  If there is no location code then use "--".
+    string location_code = 4;
+}
