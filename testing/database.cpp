@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <filesystem>
 #include <string>
@@ -13,6 +15,9 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+
+namespace
+{
 
 bool operator==(const UMetadata::Station &lhs,
                 const UMetadata::Station &rhs)
@@ -35,6 +40,7 @@ bool operator==(const UMetadata::Station &lhs,
     //std::cout << lastModified.count() << " " << lastModifiedRef.count() << std::endl;
     if (lhs.getDescription() && rhs.getDescription())
     {
+        //NOLINTNEXTLINE
         if (*lhs.getDescription() != *rhs.getDescription())
         {
             return false;
@@ -50,9 +56,11 @@ bool operator==(const UMetadata::Station &lhs,
     return true;
 }
 
+}
+
 TEST_CASE("UMetadata::Database", "[sqlite3]")
 {
-    std::filesystem::path databaseFile{"utah.sqlite3"};
+    const std::filesystem::path databaseFile{"utah.sqlite3"};
     if (std::filesystem::exists(databaseFile))
     {
         std::filesystem::remove(databaseFile);
@@ -71,13 +79,13 @@ TEST_CASE("UMetadata::Database", "[sqlite3]")
     SECTION("Query")
     {
         constexpr bool readOnly{true};
-        UMetadata::Database database{databaseFile, readOnly}; 
+        const UMetadata::Database database{databaseFile, readOnly}; 
 
         auto firstStationRef = activeStationsRef[0];
         auto firstStation
             = database.getActiveStationInformation(firstStationRef.getNetwork(),
                                                    firstStationRef.getName());
-        bool match = (firstStation && (*firstStation == firstStationRef));
+        const bool match = (firstStation && (*firstStation == firstStationRef));
         CHECK(match);
 
         auto activeStations = database.getAllActiveStations();
