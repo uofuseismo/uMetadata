@@ -1,47 +1,72 @@
 cmake_minimum_required(VERSION 3.28)
-project(uMetadata VERSION 0.0.1 LANGUAGES CXX)
+project(uMetadata VERSION 0.0.2 LANGUAGES CXX)
 enable_testing()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON) 
-option(BUILD_FOR_DEBIAN "Build debian container for deployment" OFF)
+option(BUILD_CONTAINER "Build debian container for deployment" OFF)
 option(BUILD_TESTS "Compile regression tests" ON)
-option(ENABLE_CODE_ANALYSIS "Run the cppcheck static analysis tool" OFF)
+option(WITH_CONAN "Build using Conan" OFF)
+option(USE_CLANG_TIDY "Build using clang-tidy" OFF)
 include(GenerateExportHeader)
 include(FetchContent)
 
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 NEW)
 endif()
+if (NOT BUILD_SHARED_LIBS)
+   message("Will attempt to use Boost static libraries")
+   set(Boost_USE_STATIC_LIBS ON) 
+endif()
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(Boost_USE_STATIC_LIBS ON)
-if (NOT ${BUILD_SHARED_LIBS})
-   set(ZLIB_USE_STATIC_LIBS ON)
-endif()
-find_package(absl CONFIG REQUIRED)
-find_package(utf8_range CONFIG REQUIRED)
-find_package(protobuf CONFIG REQUIRED)
+find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(SQLite3 REQUIRED)
+if(NOT TARGET SQLite3::SQLite3) # CMake < 4.3
+  add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+endif()
 find_package(Boost REQUIRED program_options REQUIRED)
-find_package(ZLIB REQUIRED)
+if (${WITH_CONAN})
+   message("Will use Conan OTLP exporters")
+   find_package(opentelemetry-cpp CONFIG COMPONENTS exporter_otlp_grpc exporters_otlp_http REQUIRED)
+else()
+   find_package(opentelemetry-cpp CONFIG COMPONENTS exporters_otlp_http REQUIRED)
+endif()
 find_package(Threads REQUIRED)
 if (BUILD_TESTS)
    find_package(Catch2 3 REQUIRED)
 endif()
-if (ENABLE_CODE_ANALYSIS)
-   find_program(cppcheck_exe NAMES cppcheck REQUIRED)
-   set(cppcheck_opts
-       --enable=all
-       --inline-suppr
-       --quiet
-       --suppress=missingIncludeSystem
-       --suppress=constParameter
-       --suppress=unmatchedSuppression
-       --suppress=unusedFunction
-       "--template='{file}:{line}: warning: {id} ({severity}): {message}'")
-   set(CMAKE_CXX_CPPCHECK ${cppcheck_exe} --std=c++20 ${cppcheck_opts})
+
+if (${USE_CLANG_TIDY} AND PROJECT_IS_TOP_LEVEL)
+   message("Looking for clang-tidy")
+   find_program(CLANG_TIDY_EXECUTABLE NAMES "clang-tidy")
+   if (CLANG_TIDY_EXECUTABLE)
+      message("Using clang-tidy  ${CLANG_TIDY_EXECUTABLE}")
+      set(CMAKE_C_CLANG_TIDY   ${CLANG_TIDY_EXECUTABLE} -p ${CMAKE_BINARY_DIR})
+      set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXECUTABLE} -p ${CMAKE_BINARY_DIR})
+      #set(CLANG_TIDY_COMMAND ${CLANG_TIDY_EXECUTABLE} "-config=${CMAKE_SOURCE_DIR}/.clang-tidy")
+      set(CMAKE_EXPORT_COMPILE_COMMANDS ON) 
+   else()
+      message("clang-tidy not found")
+   endif()
+endif()
+
+find_package(Git)
+if (Git_FOUND)
+   execute_process(
+     COMMAND ${GIT_EXECUTABLE} --no-pager log -n 1 HEAD "--pretty=format:%h"
+     OUTPUT_VARIABLE uMetadata_GITTAG
+     RESULT_VARIABLE gitresult
+     ERROR_QUIET
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+   )
+   if (gitresult EQUAL 0)
+      message(STATUS "Last Git commit: ${uMetadata_GITTAG}")
+   endif()
+else()
+   set(uMetadata_GITTAG "")
 endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/src/version.hpp.in
@@ -58,7 +83,7 @@ set(LIBRARY_SRC
     src/client.cpp
     src/station.cpp
     src/channel.cpp
-src/database.cpp)
+    src/database.cpp)
 if (BUILD_SHARED_LIBS)
    add_library(uMetadata SHARED ${LIBRARY_SRC})
 else()
@@ -75,11 +100,12 @@ target_sources(uMetadata
                   include/uMetadata/client.hpp
                )
 set_target_properties(uMetadata PROPERTIES
-                      CXX_STANDARD 20
+                      CXX_STANDARD 23
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
-target_link_libraries(uMetadata PUBLIC gRPC::grpc gRPC::grpc++
-                      PRIVATE protobuf::libprotobuf spdlog::spdlog_header_only)
+target_link_libraries(uMetadata
+                      PUBLIC gRPC::grpc gRPC::grpc++
+                      PRIVATE SQLite::SQLite3 protobuf::libprotobuf spdlog::spdlog_header_only)
 target_include_directories(uMetadata
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
@@ -92,23 +118,41 @@ protobuf_generate(TARGET uMetadata
                   GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc)
 add_executable(uMetadataServer src/server.cpp)
 set_target_properties(uMetadataServer PROPERTIES
-                      CXX_STANDARD 20
+                      CXX_STANDARD 23
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
 target_include_directories(uMetadataServer
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 target_link_libraries(uMetadataServer
-                      PRIVATE gRPC::grpc
-                              gRPC::grpc++
-                              gRPC::grpc++_reflection
-                              gRPC::grpcpp_otel_plugin
+                      PRIVATE gRPC::grpc gRPC::grpc++ gRPC::grpc++_reflection
                               uMetadata spdlog::spdlog_header_only SQLite::SQLite3
                               Boost::boost Boost::program_options Threads::Threads)
+if (${WITH_CONAN})
+   target_link_libraries(uMetadataServer
+                         PRIVATE opentelemetry-cpp::opentelemetry-cpp
+                                 opentelemetry-cpp::proto_grpc
+                                 opentelemetry-cpp::exporter_otlp_grpc
+                                 opentelemetry-cpp::exporter_otlp_grpc_client
+                                 opentelemetry-cpp::exporter_otlp_grpc_metrics
+                                 opentelemetry-cpp::exporter_otlp_http
+                                 opentelemetry-cpp::exporter_otlp_http_client
+                                 opentelemetry-cpp::exporter_otlp_http_metric
+                                 opentelemetry-cpp::exporter_otlp_http_log
+                                 opentelemetry-cpp::metrics
+                                 opentelemetry-cpp::common
+                                 opentelemetry-cpp::api)
+   target_compile_definitions(uMetadataServer PRIVATE WITH_OTLP_GRPC)
+else()
+   target_link_libraries(uMetadataServer
+                         PRIVATE opentelemetry-cpp::otlp_http_log_record_exporter
+                                 opentelemetry-cpp::otlp_http_metric_exporter)
+endif()
+
 
 add_executable(uMetadataUpdater src/updater.cpp)
 set_target_properties(uMetadataUpdater PROPERTIES
-                      CXX_STANDARD 20
+                      CXX_STANDARD 23
                       CXX_STANDARD_REQUIRED YES 
                       CXX_EXTENSIONS NO) 
 target_include_directories(uMetadataUpdater
@@ -127,11 +171,11 @@ add_executable(unitTests
                testing/channel.cpp
                testing/database.cpp)
 set_target_properties(unitTests PROPERTIES
-                      CXX_STANDARD 20
+                      CXX_STANDARD 23
                       CXX_STANDARD_REQUIRED YES 
                       CXX_EXTENSIONS NO) 
 target_link_libraries(unitTests uMetadata
-                      SQLite::SQLite3 Threads::Threads
+                      SQLite::SQLite3 Threads::Threads SQLite::SQLite3
                       Catch2::Catch2 Catch2::Catch2WithMain)
 target_include_directories(unitTests
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
@@ -177,7 +221,7 @@ install(FILES
 ##########################################################################################
 #                                        Containers                                      #
 ##########################################################################################
-if (${BUILD_FOR_DEBIAN})
+if (${BUILD_CONTAINER})
    include(CPackComponent)
    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/Dockerfile.deb.in
                   ${CMAKE_CURRENT_BINARY_DIR}/Dockerfile.deb @ONLY)
@@ -236,14 +280,14 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
    if (RPMBUILD_PROGRAM)
       list(APPEND CPACK_GENERATOR RPM)
    endif()
-   if (${BUILD_FOR_DEBIAN})
+   if (${BUILD_CONTAINER})
       find_program(DPKG_PROGRAM dpkg REQUIRED)
    else()
       find_program(DPKG_PROGRAM dpkg)
    endif()
    if (DPKG_PROGRAM)
       list(APPEND CPACK_GENERATOR DEB)
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}")# libsodium (>= 1.0.20) libzmq (>=4.3.0)")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}")
       set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON) 
    endif()
 else()

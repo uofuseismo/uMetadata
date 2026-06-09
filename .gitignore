@@ -1,3 +1,4 @@
 version.hpp
 Dockerfile.deb
 fetchData.py
+CMakeUserPresets.json

@@ -1,5 +1,11 @@
-#include <string>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <utility>
 #ifndef NDEBUG
 #include <cassert>
 #endif
@@ -64,7 +70,7 @@ Station::Station(const UMetadataAPI::V1::Station &station) :
     auto lastModifiedMuS
          = static_cast<int64_t> (
               std::round(
-                  station.last_modified().seconds()
+                  static_cast<double> (station.last_modified().seconds())
                 + station.last_modified().nanos()*1.e-9)
            )*1000000;
     work.setLastModified(std::chrono::microseconds {lastModifiedMuS});

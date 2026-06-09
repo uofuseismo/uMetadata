@@ -1,5 +1,10 @@
-#include <string>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <utility>
 #include <google/protobuf/util/time_util.h>
 #include "uMetadata/channel.hpp"
 #include "uMetadataAPI/v1/channel.pb.h"
@@ -72,7 +77,7 @@ Channel::Channel(const UMetadataAPI::V1::Channel &channel) :
     auto lastModifiedMuS
          = static_cast<int64_t> (
               std::round(
-                  channel.last_modified().seconds()
+                  static_cast<double> (channel.last_modified().seconds())
                 + channel.last_modified().nanos()*1.e-9)
            )*1000000;
     work.setLastModified(std::chrono::microseconds {lastModifiedMuS});

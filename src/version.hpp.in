@@ -4,6 +4,7 @@
 #define UMetadata_MAJOR @uMetadata_VERSION_MAJOR@
 #define UMetadata_MINOR @uMetadata_VERSION_MINOR@
 #define UMetadata_PATCH @uMetadata_VERSION_PATCH@
+#define UMetadata_GITTAG "@uMetadata_GITTAG@"
 #define UMetadata_VERSION "@PROJECT_VERSION@"
 namespace UMetadata
 {
@@ -21,6 +22,10 @@ public:
     [[nodiscard]] static int getPatch() noexcept;
     /// @result The full version number as a string, e.g., "1.2.3".
     [[nodiscard]] static std::string getVersion() noexcept;
+    /// @result The full version number as a string with the tag, e.g., "1.2.3-abc123".
+    [[nodiscard]] static std::string getVersionWithTag() noexcept;
+    /// @result The git tag.
+    [[nodiscard]] static std::string getTag() noexcept;
     /// @brief Determines if the version is greater than or equal to
     ///        the current (major, minor, patch).
     /// @param[in] major  The major version number.

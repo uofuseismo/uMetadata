@@ -1,7 +1,9 @@
-#include <vector>
-#include <string>
 #include <chrono>
 #include <limits>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include <google/protobuf/util/time_util.h>
 #include "uMetadata/channel.hpp"
 #include "uMetadataAPI/v1/channel.pb.h"
@@ -118,7 +120,7 @@ TEST_CASE("UMetadata::Channel", "[channel]")
                  lastModified.count()*1000000);
         *proto.mutable_last_modified() = std::move(lastModifiedProtobuf);
 
-        UMetadata::Channel cproto{proto};
+        const UMetadata::Channel cproto{proto};
         REQUIRE(cproto.getNetwork() == network);
         REQUIRE(cproto.getStation() == station);
         REQUIRE(cproto.getName() == name);
