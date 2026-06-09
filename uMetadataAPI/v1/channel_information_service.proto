@@ -1,0 +1,19 @@
+edition = "2023";
+
+package UMetadataAPI.V1;
+
+import "uMetadataAPI/v1/all_active_channels_request.proto";
+import "uMetadataAPI/v1/active_channel_request.proto";
+import "uMetadataAPI/v1/channels_response.proto";
+import "uMetadataAPI/v1/channel.proto";
+
+// The service that returns channel-level information.
+service ChannelInformation
+{
+    // Gets the currently running stations in the network.
+    rpc GetAllActiveChannels(AllActiveChannelsRequest) returns(ChannelsResponse) {};
+    // Gets the information corresponding to the currently running channel.
+    rpc GetActiveChannel(ActiveChannelRequest) returns(Channel) {};
+    /// Gets all channels in the network.
+    //rpc GetAllChannels(AllChannelsRequest) returns(ChannelInformationResponse) {};
+}

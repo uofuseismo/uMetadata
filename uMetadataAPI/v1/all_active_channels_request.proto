@@ -3,9 +3,9 @@ edition = "2023";
 package UMetadataAPI.V1;
 
 /*!
- * Requests the currently active (running) stations.
+ * Requests the currently active (running) channels.
  */
-message AllActiveStationsRequest
+message AllActiveChannelsRequest
 {
     string identifier = 1 [default = ""]; /// A request identifier.
 }
